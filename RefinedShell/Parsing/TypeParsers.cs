@@ -26,7 +26,7 @@ namespace RefinedShell.Parsing
             };
         }
 
-        internal static bool ContainsParser(Type type)
+        internal static bool Contains(Type type)
         {
             return _parsers.ContainsKey(type);
         }
@@ -36,9 +36,9 @@ namespace RefinedShell.Parsing
             return _parsers[type];
         }
 
-        internal static bool TryGetParser(Type type, out ITypeParser parser)
+        internal static void Remove<T>()
         {
-            return _parsers.TryGetValue(type, out parser!);
+            _parsers.Remove(typeof(T));
         }
 
         public static void AddParser<T>(ITypeParser parser)

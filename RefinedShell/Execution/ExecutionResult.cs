@@ -4,22 +4,47 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace RefinedShell.Execution
 {
+    /// <summary>
+    /// Represents the result of executing a command, indicating success and returning a value.
+    /// </summary>
     public readonly struct ExecutionResult : IEquatable<ExecutionResult>
     {
+        /// <summary>
+        /// Gets value indicating whether the execution was successful.
+        /// </summary>
         public readonly bool Success;
+
+        /// <summary>
+        /// Gets value returned by the execution, if any.
+        /// </summary>
         public readonly object? ReturnValue;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExecutionResult"/> struct.
+        /// </summary>
+        /// <param name="success">Indicates whether the execution was successful.</param>
+        /// <param name="returnValue">The value returned by the execution.</param>
         public ExecutionResult(bool success, object? returnValue)
         {
             Success = success;
             ReturnValue = returnValue;
         }
 
+        /// <summary>
+        /// Compares whether current instance is equal to specified object.
+        /// </summary>
+        /// <param name="obj">The <see cref="ExecutionResult"/> to compare.</param>
+        /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ExecutionResult er && Equals(er);
         }
 
+        /// <summary>
+        /// Compares whether current instance is equal to specified <see cref="ExecutionResult"/>.
+        /// </summary>
+        /// <param name="other">The <see cref="ExecutionResult"/> to compare.</param>
+        /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
         public bool Equals(ExecutionResult other)
         {
             return Success == other.Success && CheckReturnValueEquality(ReturnValue, other.ReturnValue);
@@ -71,26 +96,50 @@ namespace RefinedShell.Execution
             }
         }
 
+        /// <summary>
+        /// Gets the hash code of this <see cref="ExecutionResult"/>.
+        /// </summary>
+        /// <returns>Hash code of this <see cref="ExecutionResult"/>.</returns>
         public override int GetHashCode()
         {
             return HashCode.Combine(Success, ReturnValue);
         }
 
+        /// <summary>
+        /// Returns a <see cref="String"/> representation of this <see cref="ExecutionResult"/> in the format:
+        /// {Success:[bool] Return:[object]}
+        /// </summary>
+        /// <returns><see cref="String"/> representation of this <see cref="ExecutionResult"/>.</returns>
         public override string ToString()
         {
             return $"Success: {Success}, Return: {ReturnValue}";
         }
 
-        public static bool operator ==(ExecutionResult left, ExecutionResult right)
+        /// <summary>
+        /// Compares whether two <see cref="ExecutionResult"/> instances are equal.
+        /// </summary>
+        /// <param name="a"><see cref="ExecutionResult"/> instance on the left of the equal sign.</param>
+        /// <param name="b"><see cref="ExecutionResult"/> instance on the right of the equal sign.</param>
+        /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
+        public static bool operator ==(ExecutionResult a, ExecutionResult b)
         {
-            return left.Equals(right);
+            return a.Equals(b);
         }
 
-        public static bool operator !=(ExecutionResult left, ExecutionResult right)
+        /// <summary>
+        /// Compares whether two <see cref="ExecutionResult"/> instances are not equal.
+        /// </summary>
+        /// <param name="a"><see cref="ExecutionResult"/> instance on the left of the not equal sign.</param>
+        /// <param name="b"><see cref="ExecutionResult"/> instance on the right of the not equal sign.</param>
+        /// <returns><c>true</c> if the instances are not equal; <c>false</c> otherwise.</returns>
+        public static bool operator !=(ExecutionResult a, ExecutionResult b)
         {
-            return !left.Equals(right);
+            return !a.Equals(b);
         }
 
+        /// <summary>
+        /// Gets a failed <see cref="ExecutionResult"/> with no return value.
+        /// </summary>
         public static ExecutionResult Fail => new ExecutionResult(false, null);
     }
 }

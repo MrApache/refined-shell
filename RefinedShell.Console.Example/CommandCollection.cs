@@ -1,5 +1,3 @@
-using RefinedShell.Utilities;
-
 namespace RefinedShell.Example;
 
 internal sealed class CommandCollection
@@ -50,7 +48,7 @@ internal sealed class CommandCollection
     private string Help()
     {
         string result = string.Empty;
-        IEnumerable<string> commands = _shell.GetCommands(c => (StringToken)c != null!);
+        IEnumerable<string> commands = _shell.GetCommands(_ => true).Select(c => c.Name);
         result = commands.Aggregate(result, (current, command) => current + (command + '\n'));
         return result;
     }

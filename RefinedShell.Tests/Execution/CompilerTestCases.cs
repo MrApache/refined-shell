@@ -5,8 +5,8 @@ using RefinedShell.Execution;
 
 namespace RefinedShell.Tests;
 
-[TestOf(typeof(Compiler))]
 [TestFixture]
+[TestOf(typeof(Compiler))]
 internal sealed class CompilerTestCases
 {
     [ShellCommand("command")]

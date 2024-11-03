@@ -8,6 +8,9 @@ using RefinedShell.Utilities;
 
 namespace RefinedShell
 {
+    /// <summary>
+    /// Represents a shell that can execute commands.
+    /// </summary>
     public sealed class Shell
     {
         private readonly Dictionary<StringToken, StringToken> _aliases;
@@ -18,8 +21,15 @@ namespace RefinedShell
         private readonly Compiler _compiler;
         private readonly IExecutor _executor;
 
+        /// <summary>
+        /// Gets the number of commands registered in the shell.
+        /// </summary>
         public int Count => _commands.Count;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shell"/> class.
+        /// </summary>
+        /// <param name="catchExceptions">Indicates whether to catch exceptions during command execution.</param>
         public Shell(bool catchExceptions = true)
         {
             _aliases = new Dictionary<StringToken, StringToken>();
@@ -43,6 +53,11 @@ namespace RefinedShell
             return _analyzer.HasErrors(expr);
         }
 
+        /// <summary>
+        /// Executes the specified input as a command.
+        /// </summary>
+        /// <param name="input">The command input to execute.</param>
+        /// <returns>An <see cref="ExecutionResult"/> indicating the result of the execution.</returns>
         public ExecutionResult Execute(StringToken input)
         {
             if(_aliases.TryGetValue(input, out StringToken alias))
@@ -60,6 +75,11 @@ namespace RefinedShell
         }
 
         //Maybe add logs
+        /// <summary>
+        /// Registers all methods with <see cref="ShellCommandAttribute"/> in the specified source as shell commands.
+        /// </summary>
+        /// <typeparam name="T">The type containing the methods to register.</typeparam>
+        /// <param name="source">An instance of the type to use, or <c>null</c> for static methods.</param>
         public void RegisterAll<T>(T? source) where T : class
         {
             BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
@@ -83,12 +103,22 @@ namespace RefinedShell
             }
         }
 
+        /// <summary>
+        /// Registers a single command with the specified name.
+        /// </summary>
+        /// <param name="d">The command delegate.</param>
+        /// <param name="name">The name of the command.</param>
         public void Register(Delegate d, StringToken name)
         {
-            ThrowIfContains(name);
+            ThrowIfContains(name); // Maybe replace with logs
             _commands[name] = new DelegateCommand(name, d);
         }
 
+        /// <summary>
+        /// Creates an alias for a command.
+        /// </summary>
+        /// <param name="alias">Name</param>
+        /// <param name="input">Command</param>
         public void CreateAlias(StringToken alias, StringToken input)
         {
             _aliases[alias] = input;
@@ -100,6 +130,11 @@ namespace RefinedShell
                 throw new ArgumentException($"Command with name '{name}' is already registered.");
         }
 
+        /// <summary>
+        /// Unregisters all methods with <see cref="ShellCommandAttribute"/> in the specified source.
+        /// </summary>
+        /// <typeparam name="T">The type containing the methods to unregister.</typeparam>
+        /// <param name="source">An instance of the type to use, or <c>null</c> for static methods.</param>
         public void UnregisterAll<T>(T? source) where T : class
         {
             BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
@@ -116,7 +151,11 @@ namespace RefinedShell
                 Unregister(name.AsMemory());
             }
         }
-
+        
+        /// <summary>
+        /// Unregisters a command with the specified name.
+        /// </summary>
+        /// <param name="name">The name of the command</param>
         public void Unregister(StringToken name)
         {
             if (!_commands.Contains(name))
@@ -124,19 +163,33 @@ namespace RefinedShell
             _commands.Remove(name);
         }
 
+        /// <summary>
+        /// Retrieves a command by its name.
+        /// </summary>
+        /// <param name="name">The name of the command.</param>
+        /// <returns><see cref="ICommand"/> instance if found; otherwise, <c>null</c>.</returns>
         public ICommand? GetCommand(StringToken name)
         {
             return _commands.Contains(name) ? _commands[name] : null;
         }
 
+        /// <summary>
+        /// Gets commands that match the specified predicate.
+        /// </summary>
+        /// <param name="func">The predicate to filter commands.</param>
+        /// <returns>An <see cref="IEnumerable{ICommand}"/> of matching commands.</returns>
         public IEnumerable<ICommand> GetCommands(Func<ICommand, bool> func)
         {
             return _commands.Where(func);
         }
 
-        public IEnumerable<string> GetCommands(Func<StringToken, bool> func)
+        /// <summary>
+        /// Retrieves all registered commands.
+        /// </summary>
+        /// <returns>A read-only collection of all commands.</returns>
+        public IReadOnlyCollection<ICommand> GetAllCommands()
         {
-            return _commands.Where(kvp => func(kvp.Name)).Select(kvp => kvp.Name);
+            return _commands;
         }
     }
 }

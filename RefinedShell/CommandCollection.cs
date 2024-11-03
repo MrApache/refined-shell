@@ -6,7 +6,7 @@ using RefinedShell.Utilities;
 
 namespace RefinedShell
 {
-    internal sealed class CommandCollection : ICollection<ICommand>
+    internal sealed class CommandCollection : ICollection<ICommand>, IReadOnlyCollection<ICommand>
     {
         private readonly Dictionary<StringToken, ICommand> _commands;
 
@@ -50,9 +50,9 @@ namespace RefinedShell
             return false;
         }
         
-        public bool Remove(StringToken name)
+        public void Remove(StringToken name)
         {
-            return _commands.Remove(name);
+            _commands.Remove(name);
         }
 
         public bool Remove(ICommand item)

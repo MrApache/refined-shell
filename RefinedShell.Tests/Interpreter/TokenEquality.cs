@@ -43,5 +43,35 @@ namespace RefinedShell.Tests
             bool result = _token.Equals((object)_token);
             Assert.That(result, Is.True);
         }
+
+        [Test]
+        public void EqualsOperator_Other()
+        {
+            bool result = _token == new Token();
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void EqualsOperator_Same()
+        {
+            // ReSharper disable once EqualExpressionComparison
+            bool result = _token == _token;
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void NotEqualsOperator_Other()
+        {
+            bool result = _token != new Token();
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void NotEqualsOperator_Same()
+        {
+            // ReSharper disable once EqualExpressionComparison
+            bool result = _token != _token;
+            Assert.That(result, Is.False);
+        }
     }
 }

@@ -10,17 +10,17 @@ namespace RefinedShell.Tests
     [TestOf(typeof(IExecutor))]
     [TestOf(typeof(SafeExecutor))]
     [TestOf(typeof(UnsafeExecutor))]
-    internal sealed class ShellExecutor
+    internal sealed class Executors
     {
         private readonly Shell _unsafe;
         private readonly Shell _safe;
 
-        public ShellExecutor()
+        public Executors()
         {
             _unsafe = new Shell(false);
             _safe = new Shell();
-            _unsafe.RegisterAll<ShellExecutor>(null);
-            _safe.RegisterAll<ShellExecutor>(null);
+            _unsafe.RegisterAll<Executors>(null);
+            _safe.RegisterAll<Executors>(null);
         }
 
         [ShellCommand("getPlayer")]
