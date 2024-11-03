@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using NUnit.Framework;
 using RefinedShell.Execution;
+using RefinedShell.Parsing;
+using RefinedShell.Tests.Parsing;
 
 namespace RefinedShell.Tests;
 
@@ -35,6 +38,12 @@ internal sealed class CompilerTestCases
         return null;
     }
 
+    [ShellCommand("vec_length")]
+    private static float GetVector2Length(Vector2 vector)
+    {
+        return vector.Length();
+    }
+
     [ShellCommand("print")]
     private static void Print(string message)
     {
@@ -45,51 +54,55 @@ internal sealed class CompilerTestCases
     {
         {
             "command arg1 arg2; teleport $(getplayerpos)",
-            new ExecutionResult(true, new[]
+            new ExecutionResult(true, 0,0,ExecutionError.None ,new[]
             {
-                new ExecutionResult(true, "arg1arg2"),
-                new ExecutionResult(true, 1)
+                new ExecutionResult(true, 0, 0, ExecutionError.None, "arg1arg2"),
+                new ExecutionResult(true, 0, 0, ExecutionError.None,1)
             })
         },
         {
             "$(getplayerpos)",
-            new ExecutionResult(true, 1)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, 1)
         },
         {
             "command arg1 arg2",
-            new ExecutionResult(true, "arg1arg2")
+            new ExecutionResult(true, 0, 0, ExecutionError.None, "arg1arg2")
         },
         {
             "teleport_2 $(getplayerpos) cute",
-            new ExecutionResult(true, null)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
         },
         {
             "teleport_2 $(getplayerpos) $(getplayername true)",
-            new ExecutionResult(true, null)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
         },
         {
             "teleport_2 $(getplayerpos) $(getplayername false)",
-            new ExecutionResult(true, null)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
         },
         {
             "$(getplayername true)",
-            new ExecutionResult(true, "cutie")
+            new ExecutionResult(true, 0, 0, ExecutionError.None, "cutie")
         },
         {
             "$(getplayername false)",
-            new ExecutionResult(true, null)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
         },
         {
             "getplayername true",
-            new ExecutionResult(true, "cutie")
+            new ExecutionResult(true, 0, 0, ExecutionError.None, "cutie")
         },
         {
             "getplayername false",
-            new ExecutionResult(true, null)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
         },
         {
             "print hello_world",
-            new ExecutionResult(true, null)
+            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
+        },
+        {
+            "vec_length 100 4521",
+            new ExecutionResult(true,0,0,ExecutionError.None, new Vector2(100, 4521).Length())
         }
     };
 
@@ -104,10 +117,12 @@ internal sealed class CompilerTestCases
     [Test]
     public void ExecuteTestCases()
     {
+        TypeParsers.AddParser<Vector2>(new Vector2Parser());
         foreach ((string input, ExecutionResult expectedResult) in _testCases)
         {
             ExecutionResult actualResult = _shell.Execute(input);
             Assert.That(actualResult, Is.EqualTo(expectedResult));
         }
+        TypeParsers.Remove<Vector2>();
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using RefinedShell.Execution;
 
@@ -6,7 +7,7 @@ namespace RefinedShell
     /// <summary>
     /// Represents a command that can be executed in a shell
     /// </summary>
-    public interface ICommand
+    public interface ICommand : IDisposable
     {
         /// <summary>
         /// Name of the command

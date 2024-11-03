@@ -29,7 +29,7 @@ namespace RefinedShell.Execution
                 }
             }
 
-            return new ExecutionResult(success, _resultPool);
+            return new ExecutionResult(success, 0, 0, ExecutionError.None, _resultPool);
         }
     }
 }

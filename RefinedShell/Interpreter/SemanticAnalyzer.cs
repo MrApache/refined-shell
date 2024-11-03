@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Reflection;
+using RefinedShell.Execution;
 using RefinedShell.Parsing;
 
 namespace RefinedShell.Interpreter
@@ -18,11 +20,11 @@ namespace RefinedShell.Interpreter
             foreach (CommandNode commandNode in expression)
             {
                 SemanticError error = ValidateCommand(commandNode);
-                if (error.Error != SemanticError.ErrorType.ErrorsNotFound)
+                if (error.Error != ExecutionError.None)
                     return error;
             }
 
-            return SemanticError.NoErrors;
+            return SemanticError.None;
         }
 
         public bool HasErrors(Expression expression)
@@ -30,7 +32,7 @@ namespace RefinedShell.Interpreter
             foreach (CommandNode commandNode in expression)
             {
                 SemanticError error = ValidateCommand(commandNode);
-                if (error.Error != SemanticError.ErrorType.ErrorsNotFound)
+                if (error.Error != ExecutionError.None)
                     return true;
             }
 
@@ -43,70 +45,114 @@ namespace RefinedShell.Interpreter
             {
                 return new SemanticError(commandNode.Token.Start,
                     commandNode.Token.Length,
-                    SemanticError.ErrorType.CommandNotFound);
+                    ExecutionError.CommandNotFound);
             }
 
             if(commandNode.Inline && !command.ReturnsResult)
             {
                 return new SemanticError(commandNode.Token.Start,
                     commandNode.Token.Length,
-                    SemanticError.ErrorType.InlineCommandNoResult);
+                    ExecutionError.CommandHasNoReturnResult);
             }
 
             Node[] actualArguments = commandNode.Arguments;
-            ParameterInfo[] expectedArguments = command.Arguments;
-            if(actualArguments.Length < expectedArguments.Length)
+            int expectedArguments = command.Arguments.Sum(parameter => (int)TypeParsers.GetParser(parameter.ParameterType).OptionsCount);
+            if(actualArguments.Length < expectedArguments)
             {
                 if(actualArguments.Length == 0)
                 {
                     return new SemanticError(commandNode.Token.Start + commandNode.Token.Length, 1,
-                        SemanticError.ErrorType.TooFewArguments);
+                        ExecutionError.InsufficientArguments);
                 }
 
                 (int start, int length) = GetArgumentSlice(actualArguments);
-                return new SemanticError(start, length, SemanticError.ErrorType.TooFewArguments);
+                return new SemanticError(start, length, ExecutionError.InsufficientArguments);
             }
 
-            if(actualArguments.Length > expectedArguments.Length)
+            if(actualArguments.Length > expectedArguments)
             {
                 (int start, int length) = GetArgumentSlice(actualArguments);
-                return new SemanticError(start, length, SemanticError.ErrorType.TooManyArguments);
+                return new SemanticError(start, length, ExecutionError.TooManyArguments);
             }
 
-            return ValidateArguments(actualArguments, expectedArguments);
+            return ValidateArguments(command, commandNode.Arguments);
         }
 
-        private SemanticError ValidateArguments(Node[] actual, ParameterInfo[] expected)
+        private SemanticError ValidateArguments(ICommand command, Node[] arguments)
         {
-            for (int i = 0; i < actual.Length; i++)
+            int start = 0;
+
+            for (int i = 0; i < command.Arguments.Length; i++)
             {
-                Node actualArg = actual[i];
-                ParameterInfo expectedArg = expected[i];
-                switch (actualArg)
-                {
-                    case CommandNode cn:
-                    {
-                        SemanticError error = ValidateCommand(cn);
-                        if (error.Error != SemanticError.ErrorType.ErrorsNotFound)
-                            return error;
-                        break;
-                    }
-                    case ArgumentNode an:
-                    {
-                        Type type = expectedArg.ParameterType;
-                        ITypeParser parser = TypeParsers.GetParser(type);
-                        string[] arg = { an.Argument };
-                        if(!parser.CanParse(arg))
-                        {
-                            return new SemanticError(an.Token.Start, an.Token.Length,
-                                SemanticError.ErrorType.InvalidArgumentType);
-                        }
-                        break;
-                    }
-                }
+                ParameterInfo parameter = command.Arguments[i];
+                ITypeParser parser = TypeParsers.GetParser(parameter.ParameterType);
+
+                int length = (int)parser.OptionsCount;
+                ReadOnlySpan<Node> argumentSlice = arguments.AsSpan(start, length);
+                SemanticError error = ValidateArgument(parser, argumentSlice);
+                if (error != SemanticError.None)
+                    return error;
+                start += length;
+                i += length - 1;
             }
 
-            return SemanticError.NoErrors;
+            return SemanticError.None;
+        }
+        
+        private SemanticError ValidateArgument(ITypeParser parser, ReadOnlySpan<Node> arguments)
+        {
+            if (arguments.Length == 1 && arguments[0] is ArgumentNode an)
+            {
+                string[] arg = { an.Argument };
+                if(!parser.CanParse(arg))
+                {
+                    return new SemanticError(an.Token.Start, an.Token.Length,
+                        ExecutionError.InvalidArgumentType);
+                }
+            }
+            if (ContainsCommandNode(arguments))
+            {
+                for (int i = 0; i < arguments.Length; i++)
+                {
+                    switch (arguments[i])
+                    {
+                        case ArgumentNode _:
+                        {
+                            SemanticError error = ValidateArgument(parser, arguments.Slice(i, 1));
+                            if (error != SemanticError.None)
+                                return error;
+                            break;
+                        }
+                        case CommandNode c:
+                        {
+                            SemanticError error = ValidateCommand(c);
+                            if (error != SemanticError.None)
+                                return error;
+                            break;
+                        }
+                    }
+                }
+
+                return SemanticError.None;
+            }
+
+            string[] rawArgs = new string[arguments.Length];
+            int start = ((ArgumentNode)arguments[0]).Token.Start;
+            int length = 0;
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                ArgumentNode node = (ArgumentNode)arguments[i];
+                length += node.Token.Length;
+                rawArgs[i] = node.Argument;
+            }
+
+            if (!parser.CanParse(rawArgs))
+            {
+                return new SemanticError(start, length,
+                    ExecutionError.InvalidArgumentType);
+            }
+
+            return SemanticError.None;
         }
 
         private static Token GetTokenFromArgumentNode(Node node)
@@ -134,6 +180,17 @@ namespace RefinedShell.Interpreter
             }
 
             return new ValueTuple<int, int>(start, length);
+        }
+        
+        private static bool ContainsCommandNode(ReadOnlySpan<Node> nodes)
+        {
+            foreach (Node node in nodes)
+            {
+                if (node is CommandNode)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

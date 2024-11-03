@@ -16,13 +16,13 @@ namespace RefinedShell.Execution
         public override ExecutionResult Execute()
         {
             if (!Command.IsValid())
-                return ExecutionResult.Fail;
+                return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
 
             for (int i = 0; i < _arguments.Length; i++)
             {
                 IArgument argument = _arguments[i];
-                if(!argument.CanGetValue())
-                    return ExecutionResult.Fail;
+                if (!argument.CanGetValue())
+                    return new ExecutionResult(false, 0, 0, ExecutionError.ArgumentError, null);
                 _pool[i] = argument.GetValue();
             }
 

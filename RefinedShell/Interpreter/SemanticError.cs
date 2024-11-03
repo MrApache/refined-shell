@@ -1,14 +1,15 @@
 using System;
+using RefinedShell.Execution;
 
 namespace RefinedShell.Interpreter
 {
-    public readonly struct SemanticError : IEquatable<SemanticError>
+    internal readonly struct SemanticError : IEquatable<SemanticError>
     {
         public readonly int Start;
         public readonly int Length;
-        public readonly ErrorType Error;
+        public readonly ExecutionError Error;
 
-        internal SemanticError(int start, int length, ErrorType error)
+        internal SemanticError(int start, int length, ExecutionError error)
         {
             Start = start;
             Length = length;
@@ -32,17 +33,7 @@ namespace RefinedShell.Interpreter
 
         public override string ToString() => Error.ToString();
 
-        internal static SemanticError NoErrors => new SemanticError(0, 0, ErrorType.ErrorsNotFound);
-
-        public enum ErrorType
-        {
-            ErrorsNotFound,
-            CommandNotFound,
-            TooFewArguments,
-            TooManyArguments,
-            InvalidArgumentType,
-            InlineCommandNoResult
-        }
+        internal static SemanticError None => new SemanticError(0, 0, ExecutionError.None);
 
         public static bool operator ==(SemanticError left, SemanticError right)
         {

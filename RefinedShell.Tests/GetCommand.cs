@@ -38,14 +38,12 @@ namespace RefinedShell.Tests
             Assert.That(commands.Length, Is.EqualTo(3));
         }
 
-        /*
         [Test]
         public void GetAllCommandNames()
         {
-            string[] names = _shell.GetCommands(c => c.Value.Span.StartsWith("")).ToArray();
+            string[] names = _shell.GetAllCommands().Select(c => c.Name).ToArray();
             Assert.That(names.Length, Is.EqualTo(3));
         }
-        */
 
         [Test]
         public void GetCommand_ReadOnlyMemory()

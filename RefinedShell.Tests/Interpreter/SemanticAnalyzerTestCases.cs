@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using RefinedShell.Execution;
 using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests
@@ -8,56 +9,56 @@ namespace RefinedShell.Tests
     [TestOf(typeof(SemanticAnalyzer))]
     internal sealed class SemanticAnalyzerTestCases
     {
-        private readonly Dictionary<string, SemanticError.ErrorType> _testCases
-            = new Dictionary<string, SemanticError.ErrorType>
+        private readonly Dictionary<string, ExecutionError> _testCases
+            = new Dictionary<string, ExecutionError>
             {
                 {
                     "command arg1 arg2",
-                    SemanticError.ErrorType.ErrorsNotFound
+                    ExecutionError.None
                 },
                 {
                     "command1 arg1 arg2",
-                    SemanticError.ErrorType.TooFewArguments
+                    ExecutionError.InsufficientArguments
                 },
                 {
                     "command1",
-                    SemanticError.ErrorType.TooFewArguments
+                    ExecutionError.InsufficientArguments
                 },
                 {
                     "command1 arg1 arg2 arg3 arg4 arg5",
-                    SemanticError.ErrorType.TooManyArguments
+                    ExecutionError.TooManyArguments
                 },
                 {
                     "command2 value",
-                    SemanticError.ErrorType.InvalidArgumentType
+                    ExecutionError.InvalidArgumentType
                 },
                 {
                     "command2 21474836470",
-                    SemanticError.ErrorType.InvalidArgumentType
+                    ExecutionError.InvalidArgumentType
                 },
                 {
                     "command2 $(getValue)",
-                    SemanticError.ErrorType.ErrorsNotFound
+                    ExecutionError.None
                 },
                 {
                     "command2 $(convertValue $(getValue)) ",
-                    SemanticError.ErrorType.ErrorsNotFound
+                    ExecutionError.None
                 },
                 {
                     "command2 $(convertValue $(getValue)) arg1",
-                    SemanticError.ErrorType.TooManyArguments
+                    ExecutionError.TooManyArguments
                 },
                 {
                     "command2 $(convertValue)",
-                    SemanticError.ErrorType.TooFewArguments
+                    ExecutionError.InsufficientArguments
                 },
                 {
                     "command2 $(command)",
-                    SemanticError.ErrorType.InlineCommandNoResult
+                    ExecutionError.CommandHasNoReturnResult
                 },
                 {
                     "not_found arg1 arg2",
-                    SemanticError.ErrorType.CommandNotFound
+                    ExecutionError.CommandNotFound
                 }
             };
 
@@ -88,7 +89,7 @@ namespace RefinedShell.Tests
         [Test]
         public void Analyze()
         {
-            foreach ((string input, SemanticError.ErrorType errorType) in _testCases)
+            foreach ((string input, ExecutionError errorType) in _testCases)
             {
                 SemanticError error = _shell.Analyze(input);
                 Assert.That(error.Error, Is.EqualTo(errorType));
@@ -98,10 +99,10 @@ namespace RefinedShell.Tests
         [Test]
         public void HasErrors()
         {
-            foreach ((string input, SemanticError.ErrorType errorType) in _testCases)
+            foreach ((string input, ExecutionError errorType) in _testCases)
             {
                 bool actual = _shell.HasErrors(input);
-                bool expected = errorType != SemanticError.ErrorType.ErrorsNotFound;
+                bool expected = errorType != ExecutionError.None;
                 Assert.That(actual == expected, Is.True);
             }
         }

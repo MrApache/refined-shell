@@ -18,6 +18,8 @@ namespace RefinedShell
         private readonly MethodInfo _method;
         private readonly WeakReference? _target;
 
+        private bool _disposed;
+
         internal DelegateCommand(StringToken name, Delegate d)
         {
             _name = name.ToString();
@@ -30,9 +32,10 @@ namespace RefinedShell
 
         public ExecutionResult Execute(object[] args)
         {
-            if (!IsValid()) return ExecutionResult.Fail;
+            if (!IsValid())
+                return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
             object? returnValue = _method.Invoke(GetTarget(), args);
-            return new ExecutionResult(true, returnValue);
+            return new ExecutionResult(true, 0, 0, ExecutionError.None, returnValue);
         }
 
         private object? GetTarget()
@@ -42,7 +45,14 @@ namespace RefinedShell
 
         public bool IsValid()
         {
-            return (_target != null && _target.IsAlive) || _method.IsStatic;
+            return !_disposed && ((_target != null && _target.IsAlive) || _method.IsStatic);
+        }
+
+        public void Dispose()
+        {
+            if(_target != null)
+                _target.Target = null;
+            _disposed = true;
         }
     }
 }

@@ -50,9 +50,9 @@ namespace RefinedShell
             return false;
         }
         
-        public void Remove(StringToken name)
+        public void Remove(StringToken name, out ICommand command)
         {
-            _commands.Remove(name);
+            _commands.Remove(name, out command);
         }
 
         public bool Remove(ICommand item)

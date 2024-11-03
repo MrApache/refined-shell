@@ -12,7 +12,7 @@ namespace RefinedShell.Execution
             }
             catch (TargetInvocationException e)
             {
-                return new ExecutionResult(false, e.InnerException);
+                return new ExecutionResult(false, 0, 0, ExecutionError.UnhandledException, e.InnerException);
             }
         }
     }

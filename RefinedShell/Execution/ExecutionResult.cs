@@ -13,6 +13,9 @@ namespace RefinedShell.Execution
         /// Gets value indicating whether the execution was successful.
         /// </summary>
         public readonly bool Success;
+        public readonly int Start;
+        public readonly int Length;
+        public readonly ExecutionError Error;
 
         /// <summary>
         /// Gets value returned by the execution, if any.
@@ -24,9 +27,12 @@ namespace RefinedShell.Execution
         /// </summary>
         /// <param name="success">Indicates whether the execution was successful.</param>
         /// <param name="returnValue">The value returned by the execution.</param>
-        public ExecutionResult(bool success, object? returnValue)
+        public ExecutionResult(bool success, int start, int length, ExecutionError error, object? returnValue)
         {
             Success = success;
+            Start = start;
+            Length = length;
+            Error = error;
             ReturnValue = returnValue;
         }
 
@@ -47,7 +53,9 @@ namespace RefinedShell.Execution
         /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
         public bool Equals(ExecutionResult other)
         {
-            return Success == other.Success && CheckReturnValueEquality(ReturnValue, other.ReturnValue);
+            return Success == other.Success
+                && Error == other.Error
+                && CheckReturnValueEquality(ReturnValue, other.ReturnValue);
         }
 
         private static bool CheckReturnValueEquality(object? left, object? right)
@@ -136,10 +144,5 @@ namespace RefinedShell.Execution
         {
             return !a.Equals(b);
         }
-
-        /// <summary>
-        /// Gets a failed <see cref="ExecutionResult"/> with no return value.
-        /// </summary>
-        public static ExecutionResult Fail => new ExecutionResult(false, null);
     }
 }

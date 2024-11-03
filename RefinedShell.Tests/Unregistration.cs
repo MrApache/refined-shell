@@ -59,7 +59,7 @@ namespace RefinedShell.Tests
         public void UnregisterCommandThatNotExists_Nothing()
         {
             int count = _shell.Count;
-            _shell.UnregisterAll("command does not exist");
+            _shell.Unregister("command does not exist");
             Assert.That(count, Is.EqualTo(_shell.Count));
         }
 

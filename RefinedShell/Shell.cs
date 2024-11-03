@@ -66,9 +66,20 @@ namespace RefinedShell
             if (_cache.TryGetValue(input, out ExecutableExpression compiledExpression))
                 return _executor.Execute(compiledExpression);
 
-            Expression expr = _parser.GetExpression(input);
-            if (_analyzer.Analyze(expr) != SemanticError.NoErrors)
-                return ExecutionResult.Fail;
+            Expression expr;
+            try
+            {
+                expr = _parser.GetExpression(input);
+            }
+            catch (InterpreterException e)
+            {
+                return new ExecutionResult(false, e.Token.Start, e.Token.Length, e.Error, null);
+            }
+
+            SemanticError error = _analyzer.Analyze(expr);
+            if (error != SemanticError.None)
+                return new ExecutionResult(false, error.Start, error.Length, error.Error, null);
+
             compiledExpression = _compiler.Compile(expr);
             _cache[input] = compiledExpression;
             return _executor.Execute(compiledExpression);
@@ -160,7 +171,8 @@ namespace RefinedShell
         {
             if (!_commands.Contains(name))
                 return;
-            _commands.Remove(name);
+            _commands.Remove(name, out ICommand command);
+            command.Dispose();
         }
 
         /// <summary>
@@ -190,6 +202,33 @@ namespace RefinedShell
         public IReadOnlyCollection<ICommand> GetAllCommands()
         {
             return _commands;
+        }
+
+        /// <summary>
+        /// Removes all invalid commands from the command collection.
+        /// </summary>
+        /// <remarks>
+        /// This method iterates through the current list of commands and identifies those that are not valid
+        /// by calling the <see cref="ICommand.IsValid"/> method. Each invalid command is then removed from the
+        /// collection and disposed of properly to release any associated resources.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// var commandCollection = new CommandCollection();
+        /// commandCollection.RemoveNotValidCommands();
+        /// </code>
+        /// </example>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the command collection is modified during the enumeration process.
+        /// </exception>
+        public void RemoveNotValidCommands()
+        {
+            List<ICommand> notValidCommands = _commands.Where(c => !c.IsValid()).ToList();
+            foreach (ICommand command in notValidCommands)
+            {
+                _commands.Remove(command);
+                command.Dispose();
+            }
         }
     }
 }

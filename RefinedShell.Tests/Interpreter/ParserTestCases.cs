@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using RefinedShell.Execution;
 using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests;
@@ -139,47 +140,47 @@ internal sealed class ParserTestCases
     {
         {
             "command arg1 arg2; teleport $getplayerpos",
-            new InterpreterException("'(' expected", new Token(29, 12, TokenType.Value))
+            new InterpreterException(ExecutionError.UnexpectedToken, new Token(29, 12, TokenType.Value))
         },
         {
             "command $",
-            new InterpreterException("'(' expected", new Token(9, 0, TokenType.EndOfLine))
+            new InterpreterException(ExecutionError.UnexpectedToken, new Token(9, 0, TokenType.EndOfLine))
         },
         {
             "command arg1, arg2",
-            new InterpreterException("Unknown token", new Token(8, 5, TokenType.Unknown))
+            new InterpreterException(ExecutionError.UnknownToken, new Token(8, 5, TokenType.Unknown))
         },
         {
             "(command",
-            new InterpreterException("Invalid use of '('", new Token(0, 1, TokenType.OpenParenthesis))
+            new InterpreterException(ExecutionError.InvalidUsageOfToken, new Token(0, 1, TokenType.OpenParenthesis))
         },
         {
             ")command",
-            new InterpreterException("Invalid use of ')'", new Token(0, 1, TokenType.CloseParenthesis))
+            new InterpreterException(ExecutionError.InvalidUsageOfToken, new Token(0, 1, TokenType.CloseParenthesis))
         },
         {
             "command arg1 arg2)",
-            new InterpreterException("Invalid use of ')'", new Token(17, 1, TokenType.CloseParenthesis))
+            new InterpreterException(ExecutionError.InvalidUsageOfToken, new Token(17, 1, TokenType.CloseParenthesis))
         },
         {
             "command (arg1)",
-            new InterpreterException("Invalid use of '('", new Token(8, 1, TokenType.OpenParenthesis))
+            new InterpreterException(ExecutionError.InvalidUsageOfToken, new Token(8, 1, TokenType.OpenParenthesis))
         },
         {
             "command; teleport $(getplayerpos 1 2 $(spawn_position))) $(get_first_player)",
-            new InterpreterException("Invalid use of ')'", new Token(55, 1, TokenType.CloseParenthesis))
+            new InterpreterException(ExecutionError.InvalidUsageOfToken, new Token(55, 1, TokenType.CloseParenthesis))
         },
         {
             "command $(@command)",
-            new InterpreterException("Unexpected token", new Token(10, 8, TokenType.Unknown))
+            new InterpreterException(ExecutionError.UnexpectedToken, new Token(10, 8, TokenType.Unknown))
         },
         {
             "command $(command",
-            new InterpreterException("')' expected", new Token(17, 0, TokenType.EndOfLine))
+            new InterpreterException(ExecutionError.UnexpectedToken, new Token(17, 0, TokenType.EndOfLine))
         },
         {
             "@command",
-            new InterpreterException("Unknown token", new Token(0, 8, TokenType.Unknown))
+            new InterpreterException(ExecutionError.UnknownToken, new Token(0, 8, TokenType.Unknown))
         }
     };
 
