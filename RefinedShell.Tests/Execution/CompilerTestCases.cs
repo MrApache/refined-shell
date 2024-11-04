@@ -103,6 +103,14 @@ internal sealed class CompilerTestCases
         {
             "vec_length 100 4521",
             new ExecutionResult(true,0,0,ExecutionError.None, new Vector2(100, 4521).Length())
+        },
+        {
+            "print \"hello, world =)\"",
+            new ExecutionResult(true, null, ProblemSegment.None)
+        },
+        {
+            "",
+            new ExecutionResult(false, null, ProblemSegment.None)
         }
     };
 

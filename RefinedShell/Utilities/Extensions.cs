@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,27 +13,33 @@ namespace RefinedShell.Utilities
             return methodCollection.Where(m => m.GetCustomAttribute<T>() != null);
         }
 
-        public static ReadOnlyMemory<char> Split(this ReadOnlyMemory<char> memory, char separator, ref int position)
+        public static bool SequenceEqual(this ICollection a, ICollection b)
         {
-            for (int i = position; i < memory.Length; i++)
+            if (a.Count != b.Count)
+                return false;
+
+            IEnumerator e1 = a.GetEnumerator();
+            IEnumerator e2 = b.GetEnumerator();
+            try
             {
-                if (i + 1 != memory.Length)
+
+                while (e1.MoveNext())
                 {
-                    char character = memory.Span[i];
-                    if (character != separator && character != '\0')
-                        continue;
-                }
-                else
-                {
-                    i++;
+                    if (!(e2.MoveNext() && Equals(e1.Current, e2.Current)))
+                    {
+                        return false;
+                    }
                 }
 
-                ReadOnlyMemory<char> result = memory.Slice(position, i - position);
-                position = i + 1;
-                return result;
+                return !e2.MoveNext();
             }
-
-            return memory;
+            finally
+            {
+                if(e1 is IDisposable disposableE1)
+                    disposableE1.Dispose();
+                if(e2 is IDisposable disposableE2)
+                    disposableE2.Dispose();
+            }
         }
     }
 }

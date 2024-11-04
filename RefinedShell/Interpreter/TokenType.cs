@@ -3,7 +3,7 @@ using System;
 namespace RefinedShell.Interpreter
 {
     [Flags]
-    internal enum TokenType : byte
+    internal enum TokenType
     {
         Unknown = 0,
         Value = 2,
@@ -11,6 +11,7 @@ namespace RefinedShell.Interpreter
         Dollar = 8,
         OpenParenthesis = 16,
         CloseParenthesis = 32,
-        EndOfLine = 64
+        String = 64,
+        EndOfLine = 128
     }
 }

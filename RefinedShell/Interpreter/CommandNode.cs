@@ -28,7 +28,7 @@ namespace RefinedShell.Interpreter
         {
             if (other is CommandNode cn)
                 return _command.Equals(cn._command)
-                       && _arguments.SequenceEqual(cn._arguments)
+                       && Enumerable.SequenceEqual(_arguments, cn._arguments)
                        && _inline == cn._inline
                        && _token.Equals(cn._token);
             return false;

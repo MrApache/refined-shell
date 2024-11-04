@@ -15,42 +15,30 @@ namespace RefinedShell.Interpreter
             _collection = collection;
         }
 
-        public SemanticError Analyze(Expression expression)
+        public ProblemSegment Analyze(Expression expression)
         {
             foreach (CommandNode commandNode in expression)
             {
-                SemanticError error = ValidateCommand(commandNode);
+                ProblemSegment error = ValidateCommand(commandNode);
                 if (error.Error != ExecutionError.None)
                     return error;
             }
 
-            return SemanticError.None;
+            return ProblemSegment.None;
         }
 
-        public bool HasErrors(Expression expression)
-        {
-            foreach (CommandNode commandNode in expression)
-            {
-                SemanticError error = ValidateCommand(commandNode);
-                if (error.Error != ExecutionError.None)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private SemanticError ValidateCommand(CommandNode commandNode)
+        private ProblemSegment ValidateCommand(CommandNode commandNode)
         {
             if(!_collection.TryGetCommand(commandNode.Command, out ICommand? command))
             {
-                return new SemanticError(commandNode.Token.Start,
+                return new ProblemSegment(commandNode.Token.Start,
                     commandNode.Token.Length,
                     ExecutionError.CommandNotFound);
             }
 
             if(commandNode.Inline && !command.ReturnsResult)
             {
-                return new SemanticError(commandNode.Token.Start,
+                return new ProblemSegment(commandNode.Token.Start,
                     commandNode.Token.Length,
                     ExecutionError.CommandHasNoReturnResult);
             }
@@ -61,24 +49,24 @@ namespace RefinedShell.Interpreter
             {
                 if(actualArguments.Length == 0)
                 {
-                    return new SemanticError(commandNode.Token.Start + commandNode.Token.Length, 1,
+                    return new ProblemSegment(commandNode.Token.Start + commandNode.Token.Length, 1,
                         ExecutionError.InsufficientArguments);
                 }
 
                 (int start, int length) = GetArgumentSlice(actualArguments);
-                return new SemanticError(start, length, ExecutionError.InsufficientArguments);
+                return new ProblemSegment(start, length, ExecutionError.InsufficientArguments);
             }
 
             if(actualArguments.Length > expectedArguments)
             {
                 (int start, int length) = GetArgumentSlice(actualArguments);
-                return new SemanticError(start, length, ExecutionError.TooManyArguments);
+                return new ProblemSegment(start, length, ExecutionError.TooManyArguments);
             }
 
             return ValidateArguments(command, commandNode.Arguments);
         }
 
-        private SemanticError ValidateArguments(ICommand command, Node[] arguments)
+        private ProblemSegment ValidateArguments(ICommand command, Node[] arguments)
         {
             int start = 0;
 
@@ -89,24 +77,24 @@ namespace RefinedShell.Interpreter
 
                 int length = (int)parser.OptionsCount;
                 ReadOnlySpan<Node> argumentSlice = arguments.AsSpan(start, length);
-                SemanticError error = ValidateArgument(parser, argumentSlice);
-                if (error != SemanticError.None)
+                ProblemSegment error = ValidateArgument(parser, argumentSlice);
+                if (error != ProblemSegment.None)
                     return error;
                 start += length;
                 i += length - 1;
             }
 
-            return SemanticError.None;
+            return ProblemSegment.None;
         }
         
-        private SemanticError ValidateArgument(ITypeParser parser, ReadOnlySpan<Node> arguments)
+        private ProblemSegment ValidateArgument(ITypeParser parser, ReadOnlySpan<Node> arguments)
         {
             if (arguments.Length == 1 && arguments[0] is ArgumentNode an)
             {
                 string[] arg = { an.Argument };
                 if(!parser.CanParse(arg))
                 {
-                    return new SemanticError(an.Token.Start, an.Token.Length,
+                    return new ProblemSegment(an.Token.Start, an.Token.Length,
                         ExecutionError.InvalidArgumentType);
                 }
             }
@@ -118,22 +106,22 @@ namespace RefinedShell.Interpreter
                     {
                         case ArgumentNode _:
                         {
-                            SemanticError error = ValidateArgument(parser, arguments.Slice(i, 1));
-                            if (error != SemanticError.None)
+                            ProblemSegment error = ValidateArgument(parser, arguments.Slice(i, 1));
+                            if (error != ProblemSegment.None)
                                 return error;
                             break;
                         }
                         case CommandNode c:
                         {
-                            SemanticError error = ValidateCommand(c);
-                            if (error != SemanticError.None)
+                            ProblemSegment error = ValidateCommand(c);
+                            if (error != ProblemSegment.None)
                                 return error;
                             break;
                         }
                     }
                 }
 
-                return SemanticError.None;
+                return ProblemSegment.None;
             }
 
             string[] rawArgs = new string[arguments.Length];
@@ -148,11 +136,11 @@ namespace RefinedShell.Interpreter
 
             if (!parser.CanParse(rawArgs))
             {
-                return new SemanticError(start, length,
+                return new ProblemSegment(start, length,
                     ExecutionError.InvalidArgumentType);
             }
 
-            return SemanticError.None;
+            return ProblemSegment.None;
         }
 
         private static Token GetTokenFromArgumentNode(Node node)
@@ -171,13 +159,13 @@ namespace RefinedShell.Interpreter
 
         private static (int start, int length) GetArgumentSlice(Node[] arguments)
         {
-            Token token = GetTokenFromArgumentNode(arguments[0]);
-            int start = token.Start;
-            int length = token.Length;
-            for (int i = 1; i < arguments.Length; i++)
-            {
-                length += GetTokenFromArgumentNode(arguments[i]).Length;
-            }
+            Token startToken = GetTokenFromArgumentNode(arguments[0]);
+            int start = startToken.Start;
+
+            Token endToken = GetTokenFromArgumentNode(arguments[^1]);
+            int end = endToken.Start + endToken.Length;
+
+            int length = end - start;
 
             return new ValueTuple<int, int>(start, length);
         }

@@ -17,16 +17,22 @@ namespace RefinedShell.Interpreter
             _tokenDefinitions = new List<TokenDefinition>
             {
                 //new TokenDefinition(TokenType.Value,"^[a-zA-Z_][a-zA-Z0-9_]*$"),
-                new TokenDefinition(TokenType.Value,@"^\s*[a-zA-Z0-9_]*$"),
-                new TokenDefinition(TokenType.Semicolon,"[;]"),
-                new TokenDefinition(TokenType.Dollar,@"^\$"),
-                new TokenDefinition(TokenType.OpenParenthesis,@"\("),
-                new TokenDefinition(TokenType.CloseParenthesis,@"\)$")
                 //new TokenDefinition(TokenType.Substitution,@"^[$]\([a-zA-Z0-9_ ]+\)$")
+                new TokenDefinition(TokenType.Value,@"^\s*[a-zA-Z0-9_]*$"),
+                //new TokenDefinition(TokenType.Semicolon,"[;]"),
+                //new TokenDefinition(TokenType.Dollar,@"^\$"),
+                //new TokenDefinition(TokenType.OpenParenthesis,@"\("),
+                //new TokenDefinition(TokenType.CloseParenthesis,@"\)$"),
+                //new TokenDefinition(TokenType.Quotes, "\""),
+                new TokenDefinition(TokenType.String, "^\"{1}[^\"]*\"{1}$"),
             };
             _input = string.Empty;
             _currentToken = default;
         }
+
+        //Command -- ^[a-zA-Z_][a-zA-Z0-9_]*$
+        //String -- "^\"{1}[^\"]*\"{1}$"
+        //String --
 
         public void SetInputString(string input)
         {
@@ -78,7 +84,16 @@ namespace RefinedShell.Interpreter
 
             while (_position < _input.Length && !IsSpecialSymbol(_input[_position]))
             {
-                _position++;
+                if (_input[_position] != '"')
+                {
+                    _position++;
+                }
+                else
+                {
+                    if(FindEnfOfString())
+                        break;
+                    return new Token(start, _position - start, TokenType.Unknown);
+                }
             }
 
             int length = _position - start;
@@ -90,7 +105,25 @@ namespace RefinedShell.Interpreter
                     return new Token(start, length, tokenType);
                 }
             }
+
             return new Token(start, length, TokenType.Unknown);
+        }
+
+        private bool FindEnfOfString()
+        {
+            _position++;
+            int quotes = 1;
+            while (quotes != 2)
+            {
+                if (_position >= _input.Length)
+                    return false;
+                if (_input[_position] == '"')
+                {
+                    quotes++;
+                }
+                _position++;
+            }
+            return true;
         }
     }
 }

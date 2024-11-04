@@ -133,6 +133,15 @@ internal sealed class ParserTestCases
                             "getplayerpos", [], true)
                     ])
             )
+        },
+        {
+            "print \"Hello world@-42=[]]-'l.\"",
+            new Expression(
+                new CommandNode(new Token(0, 5, TokenType.Value), "print",
+                    [
+                        new ArgumentNode(new Token(6, 25, TokenType.String), "Hello world@-42=[]]-'l.")
+                    ])
+                )
         }
     };
 

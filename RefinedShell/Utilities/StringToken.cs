@@ -15,6 +15,8 @@ namespace RefinedShell.Utilities
         /// </summary>
         public int Length => _value.Length;
 
+        public bool IsEmpty => Length == 0;
+
         private StringToken(ReadOnlyMemory<char> value)
         {
             _value = value;

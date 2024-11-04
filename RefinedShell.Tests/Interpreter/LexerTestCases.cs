@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using RefinedShell.Interpreter;
+using TokenType = RefinedShell.Interpreter.TokenType;
 
 namespace RefinedShell.Tests
 {
@@ -12,6 +13,25 @@ namespace RefinedShell.Tests
         private readonly Dictionary<string, List<(string, TokenType)>> _testCases
             = new Dictionary<string, List<(string, TokenType)>>
             {
+                ["print \"message \" \" "] =
+                    new List<(string, TokenType)>
+                    {
+                        ("print", TokenType.Value),
+                        ("\"message \"", TokenType.String),
+                        ("\" ", TokenType.Unknown) //Error
+                    },
+                ["print \"hello, world!!!()@(@_)_\""] =
+                    new List<(string, TokenType)>
+                    {
+                        ("print", TokenType.Value),
+                        ("\"hello, world!!!()@(@_)_\"", TokenType.String)
+                    },
+                ["print \"Hello world@-42=[]]-'l.\""] =
+                    new List<(string, TokenType)>
+                    {
+                         ("print", TokenType.Value),
+                         ("\"Hello world@-42=[]]-'l.\"", TokenType.String)
+                    },
                 ["command arg1 arg2; teleport $(getplayerpos)"] =
                     new List<(string, TokenType)>
                     {

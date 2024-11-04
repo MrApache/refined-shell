@@ -41,16 +41,21 @@ namespace RefinedShell
             _executor = catchExceptions ? (IExecutor)new SafeExecutor() : new UnsafeExecutor();
         }
 
-        internal SemanticError Analyze(string input)
+        internal (Expression? expression, ProblemSegment problem) Analyze(StringToken input)
         {
-            Expression expr = _parser.GetExpression(input);
-            return _analyzer.Analyze(expr);
-        }
-
-        internal bool HasErrors(string input)
-        {
-            Expression expr = _parser.GetExpression(input);
-            return _analyzer.HasErrors(expr);
+            Expression? expression;
+            ProblemSegment segment;
+            try
+            {
+                expression = _parser.GetExpression(input);
+                segment = _analyzer.Analyze(expression);
+            }
+            catch (InterpreterException e)
+            {
+                expression = null;
+                segment = new ProblemSegment(e.Token.Start, e.Token.Length, e.Error);
+            }
+            return new ValueTuple<Expression?, ProblemSegment>(expression, segment);
         }
 
         /// <summary>
@@ -60,27 +65,19 @@ namespace RefinedShell
         /// <returns>An <see cref="ExecutionResult"/> indicating the result of the execution.</returns>
         public ExecutionResult Execute(StringToken input)
         {
+            if (input.IsEmpty)
+                return new ExecutionResult(false, null, ProblemSegment.None);
+
             if(_aliases.TryGetValue(input, out StringToken alias))
                 input = alias;
 
             if (_cache.TryGetValue(input, out ExecutableExpression compiledExpression))
                 return _executor.Execute(compiledExpression);
 
-            Expression expr;
-            try
-            {
-                expr = _parser.GetExpression(input);
-            }
-            catch (InterpreterException e)
-            {
-                return new ExecutionResult(false, e.Token.Start, e.Token.Length, e.Error, null);
-            }
-
-            SemanticError error = _analyzer.Analyze(expr);
-            if (error != SemanticError.None)
-                return new ExecutionResult(false, error.Start, error.Length, error.Error, null);
-
-            compiledExpression = _compiler.Compile(expr);
+            (Expression? expression, ProblemSegment error) = Analyze(input);
+            if (error != ProblemSegment.None)
+                return new ExecutionResult(false, null, error);
+            compiledExpression = _compiler.Compile(expression!);
             _cache[input] = compiledExpression;
             return _executor.Execute(compiledExpression);
         }
@@ -121,6 +118,8 @@ namespace RefinedShell
         /// <param name="name">The name of the command.</param>
         public void Register(Delegate d, StringToken name)
         {
+            if (name.IsEmpty)
+                return;
             ThrowIfContains(name); // Maybe replace with logs
             _commands[name] = new DelegateCommand(name, d);
         }
@@ -132,6 +131,8 @@ namespace RefinedShell
         /// <param name="input">Command</param>
         public void CreateAlias(StringToken alias, StringToken input)
         {
+            if (alias.IsEmpty || input.IsEmpty)
+                return;
             _aliases[alias] = input;
         }
 
@@ -162,7 +163,7 @@ namespace RefinedShell
                 Unregister(name.AsMemory());
             }
         }
-        
+
         /// <summary>
         /// Unregisters a command with the specified name.
         /// </summary>

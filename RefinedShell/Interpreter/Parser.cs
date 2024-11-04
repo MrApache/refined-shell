@@ -67,20 +67,15 @@ namespace RefinedShell.Interpreter
                     {
                         return expression;
                     }
+                    case TokenType.String:
                     case TokenType.OpenParenthesis:
-                    {
-                        //throw new InterpreterException("Invalid use of '('", _currentToken);
-                        throw new InterpreterException(ExecutionError.InvalidUsageOfToken, _currentToken);
-                    }
                     case TokenType.CloseParenthesis:
                     {
-                        //throw new InterpreterException("Invalid use of ')'", _currentToken);
                         throw new InterpreterException(ExecutionError.InvalidUsageOfToken, _currentToken);
                     }
                     case TokenType.Unknown:
                     default:
                     {
-                        //throw new InterpreterException("Unknown token", _currentToken);
                         throw new InterpreterException(ExecutionError.UnknownToken, _currentToken);
                     }
                 }
@@ -101,6 +96,12 @@ namespace RefinedShell.Interpreter
                 GetNextToken();
                 switch (token.Type)
                 {
+                    case TokenType.String:
+                    {
+                        ReadOnlySpan<char> argument = input.Slice(token.Start + 1, token.Length - 2); //Remove quotes
+                        list.Add(new ArgumentNode(token, argument.ToString()));
+                        break;
+                    }
                     case TokenType.Value:
                     {
                         ReadOnlySpan<char> argument = input.Slice(token.Start, token.Length);
@@ -121,8 +122,8 @@ namespace RefinedShell.Interpreter
                     }
                     case TokenType.OpenParenthesis:
                     {
-                        //throw new InterpreterException("Invalid use of '('", token);
-                        throw new InterpreterException(ExecutionError.InvalidUsageOfToken, token);
+                        //throw new InterpreterException(ExecutionError.InvalidUsageOfToken, token);
+                        throw new InterpreterException(ExecutionError.UnexpectedToken, token);
                     }
                     case TokenType.CloseParenthesis:
                     {
@@ -131,13 +132,11 @@ namespace RefinedShell.Interpreter
                             GetPreviousToken();
                             return list;
                         }
-                        //throw new InterpreterException("Invalid use of ')'", token);
                         throw new InterpreterException(ExecutionError.InvalidUsageOfToken, token);
                     }
                     case TokenType.Unknown:
                     default:
                     {
-                        //throw new InterpreterException("Unknown token", token);
                         throw new InterpreterException(ExecutionError.UnknownToken, token);
                     }
                 }
@@ -149,18 +148,15 @@ namespace RefinedShell.Interpreter
             if (Match(TokenType.Dollar) == null)
             {
                 throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
-                //throw new InterpreterException("'$' expected", _currentToken);
             }
 
             if(Match(TokenType.OpenParenthesis) == null)
             {
-                //throw new InterpreterException("'(' expected", _currentToken);
                 throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
             }
 
             CommandNode command = ParseCommand(input, true);
             if (Match(TokenType.CloseParenthesis) == null)
-                //throw new InterpreterException("')' expected", _currentToken);
                 throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
 
             return command;
@@ -170,7 +166,6 @@ namespace RefinedShell.Interpreter
         {
             if (Match(TokenType.Value | TokenType.Dollar) == null)
             {
-                //throw new InterpreterException("Unexpected token", _currentToken);
                 throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
             }
 

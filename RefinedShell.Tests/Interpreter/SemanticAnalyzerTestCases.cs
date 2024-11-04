@@ -91,19 +91,8 @@ namespace RefinedShell.Tests
         {
             foreach ((string input, ExecutionError errorType) in _testCases)
             {
-                SemanticError error = _shell.Analyze(input);
+                ProblemSegment error = _shell.Analyze(input).problem;
                 Assert.That(error.Error, Is.EqualTo(errorType));
-            }
-        }
-
-        [Test]
-        public void HasErrors()
-        {
-            foreach ((string input, ExecutionError errorType) in _testCases)
-            {
-                bool actual = _shell.HasErrors(input);
-                bool expected = errorType != ExecutionError.None;
-                Assert.That(actual == expected, Is.True);
             }
         }
     }

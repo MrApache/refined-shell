@@ -17,5 +17,34 @@ while(true)
         continue;
     }
     ExecutionResult result = shell.Execute(input);
-    Console.WriteLine($"[{result.Success}]->{result.ReturnValue}");
+    switch (result.Error)
+    {
+        case ExecutionError.None:
+            if(result.ReturnValue == null)
+                Console.WriteLine($"[{result.Success}]");
+            else
+                Console.WriteLine($"[{result.Success}]->{result.ReturnValue}");
+            break;
+        case ExecutionError.CommandNotFound:
+            Console.WriteLine("[F]->Command not found");
+            break;
+        case ExecutionError.UnknownToken:
+        case ExecutionError.InvalidUsageOfToken:
+        case ExecutionError.UnexpectedToken:
+        case ExecutionError.InsufficientArguments:
+        case ExecutionError.TooManyArguments:
+        case ExecutionError.InvalidArgumentType:
+            Console.WriteLine($"[{result.Success}]->{result.Error}: '{input.Substring(result.Segment.Start, result.Segment.Length)}'");
+            break;
+        case ExecutionError.CommandHasNoReturnResult:
+            break;
+        case ExecutionError.CommandNotValid:
+            break;
+        case ExecutionError.ArgumentError:
+            break;
+        case ExecutionError.UnhandledException:
+            break;
+        default:
+            throw new ArgumentOutOfRangeException();
+    }
 }
