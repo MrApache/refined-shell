@@ -16,23 +16,18 @@ namespace RefinedShell.Interpreter
         {
             _tokenDefinitions = new List<TokenDefinition>
             {
-                //new TokenDefinition(TokenType.Value,"^[a-zA-Z_][a-zA-Z0-9_]*$"),
-                //new TokenDefinition(TokenType.Substitution,@"^[$]\([a-zA-Z0-9_ ]+\)$")
-                new TokenDefinition(TokenType.Value,@"^\s*[a-zA-Z0-9_]*$"),
-                //new TokenDefinition(TokenType.Semicolon,"[;]"),
-                //new TokenDefinition(TokenType.Dollar,@"^\$"),
-                //new TokenDefinition(TokenType.OpenParenthesis,@"\("),
-                //new TokenDefinition(TokenType.CloseParenthesis,@"\)$"),
-                //new TokenDefinition(TokenType.Quotes, "\""),
-                new TokenDefinition(TokenType.String, "^\"{1}[^\"]*\"{1}$"),
+                new TokenDefinition(TokenType.Whitespace, @"^\s+"),
+                new TokenDefinition(TokenType.String, "^\"{1}[^\"]*\"{1}"),
+                new TokenDefinition(TokenType.Identifier, "^[a-zA-Z_][a-zA-Z0-9_]*"),
+                new TokenDefinition(TokenType.Number, "^[0-9]+([.][0-9]*)?"),
+                new TokenDefinition(TokenType.Semicolon, "^;"),
+                new TokenDefinition(TokenType.Dollar, @"^\$"),
+                new TokenDefinition(TokenType.OpenParenthesis, @"^\("),
+                new TokenDefinition(TokenType.CloseParenthesis, @"^\)")
             };
             _input = string.Empty;
             _currentToken = default;
         }
-
-        //Command -- ^[a-zA-Z_][a-zA-Z0-9_]*$
-        //String -- "^\"{1}[^\"]*\"{1}$"
-        //String --
 
         public void SetInputString(string input)
         {
@@ -55,75 +50,49 @@ namespace RefinedShell.Interpreter
             return nextToken;
         }
 
-        private static bool IsSpecialSymbol(char c)
-        {
-            return c == ';' || c == '$' || c == '(' || c == ')' || c == ' ';
-        }
-
         private Token FindNextToken()
         {
-            while (_position < _input.Length && _input[_position] == ' ')
+            while(_position < _input.Length)
             {
-                _position++;
-            }
+                Token token = GoNext();
+                if(token.Type == TokenType.Whitespace)
+                    continue;
 
-            if (_position >= _input.Length)
-            {
-                return new Token(_input.Length, 0, TokenType.EndOfLine);
-            }
-
-            switch (_input[_position])
-            {
-                case ';': return new Token(_position++, 1, TokenType.Semicolon);
-                case '$': return new Token(_position++, 1, TokenType.Dollar);
-                case '(': return new Token(_position++, 1, TokenType.OpenParenthesis);
-                case ')': return new Token(_position++, 1, TokenType.CloseParenthesis);
-            }
-
-            int start = _position;
-
-            while (_position < _input.Length && !IsSpecialSymbol(_input[_position]))
-            {
-                if (_input[_position] != '"')
+                if(token.Type == TokenType.Unknown)
                 {
+                    int start = _position;
+                    Start:
                     _position++;
-                }
-                else
-                {
-                    if(FindEnfOfString())
-                        break;
+                    Token nextToken = FindNextToken();
+                    if (nextToken.Type == TokenType.Unknown)
+                    {
+                        goto Start;
+                    }
+
                     return new Token(start, _position - start, TokenType.Unknown);
                 }
+
+                return token;
             }
 
-            int length = _position - start;
-            string slice = _input.Substring(start, length);
-            foreach ((TokenType tokenType, string pattern) in _tokenDefinitions)
-            {
-                if (Regex.IsMatch(slice, pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase))
-                {
-                    return new Token(start, length, tokenType);
-                }
-            }
-
-            return new Token(start, length, TokenType.Unknown);
+            return new Token(_input.Length, 0, TokenType.EndOfLine);
         }
 
-        private bool FindEnfOfString()
+        private Token GoNext()
         {
-            _position++;
-            int quotes = 1;
-            while (quotes != 2)
+            string slice = _input.Substring(_position, _input.Length - _position);
+            foreach ((TokenType tokenType, string pattern) in _tokenDefinitions)
             {
-                if (_position >= _input.Length)
-                    return false;
-                if (_input[_position] == '"')
+                Match match = Regex.Match(slice, pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                if(match.Success)
                 {
-                    quotes++;
+                    Token token = new Token(_position, match.Length, tokenType);
+                    _position += match.Length;
+                    return token; // return token;
                 }
-                _position++;
             }
-            return true;
+
+            return new Token(0, 0, TokenType.Unknown);
         }
     }
 }

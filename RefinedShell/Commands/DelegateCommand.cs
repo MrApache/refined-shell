@@ -30,7 +30,7 @@ namespace RefinedShell
             _returnsResult = _method.ReturnType != typeof(void);
         }
 
-        public ExecutionResult Execute(object[] args)
+        public ExecutionResult Execute(object?[] args)
         {
             if (!IsValid())
                 return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);

@@ -16,7 +16,7 @@ internal sealed class CommandCollection
         _shell.Register(Subtract, "subtract");
         _shell.Register(Multiply, "multiply");
         _shell.Register(Help, "help");
-        _shell.RegisterAll<CommandCollection>(null);
+        _shell.RegisterAll(this);
     }
 
     private int Add(int a, int b)
@@ -51,5 +51,27 @@ internal sealed class CommandCollection
         IEnumerable<string> commands = _shell.GetCommands(_ => true).Select(c => c.Name);
         result = commands.Aggregate(result, (current, command) => current + (command + '\n'));
         return result;
+    }
+
+    [ShellCommand("rm_cmd")]
+    private bool RemoveCommand(string name)
+    {
+        return _shell.Unregister(name);
+    }
+
+    [ShellCommand("dispose")]
+    private bool DisposeCommand(string name)
+    {
+        ICommand? command = _shell.GetCommand(name);
+        if (command == null)
+            return false;
+        command.Dispose();
+        return true;
+    }
+
+    [ShellCommand("null")]
+    private string? GetNullString()
+    {
+        return null;
     }
 }

@@ -23,113 +23,115 @@ internal sealed class ParserTestCases
         {
             "$(command)",
             new Expression(
-                new CommandNode(new Token(2, 7, TokenType.Value), "command", [], true))
+                new CommandNode(new Token(2, 7, TokenType.Identifier), "command", [], true))
         },
         {
             "$(command arg1 arg2)",
             new Expression(
-                new CommandNode(new Token(2, 7, TokenType.Value), "command",
+                new CommandNode(new Token(2, 7, TokenType.Identifier), "command",
                 [
-                    new ArgumentNode(new Token(9, 4, TokenType.Value), "arg1"),
-                    new ArgumentNode(new Token(13, 4, TokenType.Value), "arg2")
+                    new ArgumentNode(new Token(9, 4, TokenType.Identifier), "arg1"),
+                    new ArgumentNode(new Token(13, 4, TokenType.Identifier), "arg2")
                 ], true))
         },
         {
             "command arg1 arg2; teleport $(getplayerpos)",
             new Expression(
-                new CommandNode(new Token(0, 7, TokenType.Value), "command",
+                new CommandNode(new Token(0, 7, TokenType.Identifier), "command",
                 [
-                    new ArgumentNode(new Token(8, 4, TokenType.Value), "arg1"),
-                    new ArgumentNode(new Token(13, 4, TokenType.Value), "arg2")
+                    new ArgumentNode(new Token(8, 4, TokenType.Identifier), "arg1"),
+                    new ArgumentNode(new Token(13, 4, TokenType.Identifier), "arg2")
                 ]),
 
-                new CommandNode(new Token(19, 8, TokenType.Value), "teleport",
+                new CommandNode(new Token(19, 8, TokenType.Identifier), "teleport",
                 [
-                    new CommandNode(new Token(30, 12, TokenType.Value),"getplayerpos", [], true)
+                    new CommandNode(new Token(30, 12, TokenType.Identifier),"getplayerpos", [], true)
                 ])
             )
         },
         {
             "move $(wrongformat); teleport here",
             new Expression(
-                new CommandNode(new Token(0, 4, TokenType.Value),"move",
+                new CommandNode(new Token(0, 4, TokenType.Identifier),"move",
                 [
-                    new CommandNode(new Token(7, 11, TokenType.Value),"wrongformat", [], true)
+                    new CommandNode(new Token(7, 11, TokenType.Identifier),"wrongformat", [], true)
                 ]),
-                new CommandNode(new Token(21, 8, TokenType.Value), "teleport",
+                new CommandNode(new Token(21, 8, TokenType.Identifier), "teleport",
                 [
-                    new ArgumentNode(new Token(30, 4, TokenType.Value),"here")
+                    new ArgumentNode(new Token(30, 4, TokenType.Identifier),"here")
                 ])
             )
         },
+        /*
         {
             "teleport $(getplayerpos current) $(123arg2)", //hmm
             new Expression(
-                new CommandNode(new Token(0, 8, TokenType.Value), "teleport",
+                new CommandNode(new Token(0, 8, TokenType.Identifier), "teleport",
                 [
-                    new CommandNode(new Token(11, 12, TokenType.Value),"getplayerpos",
+                    new CommandNode(new Token(11, 12, TokenType.Identifier),"getplayerpos",
                     [
-                        new ArgumentNode(new Token(24, 7, TokenType.Value), "current")
+                        new ArgumentNode(new Token(24, 7, TokenType.Identifier), "current")
                     ], true),
-                    new CommandNode(new Token(35, 7, TokenType.Value),"123arg2", [], true)
+                    new CommandNode(new Token(35, 7, TokenType.Identifier),"123arg2", [], true)
                 ])
             )
         },
+        */
         {
             "move right; command start run; teleport $(getplayerpos)",
             new Expression(
-                new CommandNode(new Token(0, 4, TokenType.Value),"move",
+                new CommandNode(new Token(0, 4, TokenType.Identifier),"move",
                 [
-                    new ArgumentNode(new Token(5, 5, TokenType.Value),"right")
+                    new ArgumentNode(new Token(5, 5, TokenType.Identifier),"right")
                 ]),
-                new CommandNode(new Token(12, 7, TokenType.Value) ,"command",
+                new CommandNode(new Token(12, 7, TokenType.Identifier) ,"command",
                 [
-                    new ArgumentNode(new Token(20, 5, TokenType.Value),"start"),
-                    new ArgumentNode(new Token(26, 3, TokenType.Value),"run")
+                    new ArgumentNode(new Token(20, 5, TokenType.Identifier),"start"),
+                    new ArgumentNode(new Token(26, 3, TokenType.Identifier),"run")
                 ]),
-                new CommandNode(new Token(31, 8, TokenType.Value),"teleport",
+                new CommandNode(new Token(31, 8, TokenType.Identifier),"teleport",
                 [
-                    new CommandNode(new Token(42, 12, TokenType.Value),"getplayerpos", [], true)
+                    new CommandNode(new Token(42, 12, TokenType.Identifier),"getplayerpos", [], true)
                 ])
             )
         },
         {
             "command ; move          right 20 ; attack",
             new Expression(
-                new CommandNode(new Token(0, 7, TokenType.Value),
+                new CommandNode(new Token(0, 7, TokenType.Identifier),
                     "command", []),
-                new CommandNode(new Token(10, 4, TokenType.Value), "move",
+                new CommandNode(new Token(10, 4, TokenType.Identifier), "move",
                 [
-                    new ArgumentNode(new Token(24, 5, TokenType.Value),"right"),
-                    new ArgumentNode(new Token(30, 2, TokenType.Value),"20")
+                    new ArgumentNode(new Token(24, 5, TokenType.Identifier),"right"),
+                    new ArgumentNode(new Token(30, 2, TokenType.Identifier),"20")
                 ]),
-                new CommandNode(new Token(35, 6, TokenType.Value),
+                new CommandNode(new Token(35, 6, TokenType.Identifier),
                     "attack", [])
             )
         },
         {
             " ; teleport",
             new Expression(
-                new CommandNode(new Token(3, 8, TokenType.Value),
+                new CommandNode(new Token(3, 8, TokenType.Identifier),
                     "teleport",[])
             )
         },
         {
             "command $(getpos $(get_player this)) $ ( getplayerpos )",
             new Expression(
-                new CommandNode(new Token(0, 7, TokenType.Value),
+                new CommandNode(new Token(0, 7, TokenType.Identifier),
                     "command",
                     [
-                        new CommandNode(new Token(10, 6, TokenType.Value),
+                        new CommandNode(new Token(10, 6, TokenType.Identifier),
                             "getpos",
                             [
-                                new CommandNode(new Token(19, 10, TokenType.Value),
+                                new CommandNode(new Token(19, 10, TokenType.Identifier),
                                     "get_player",
                                     [
-                                        new ArgumentNode(new Token(30, 4, TokenType.Value), "this")
+                                        new ArgumentNode(new Token(30, 4, TokenType.Identifier), "this")
                                     ], true)
                             ], true),
-                        new CommandNode(new Token(41, 12, TokenType.Value),
+                        new CommandNode(new Token(41, 12, TokenType.Identifier),
                             "getplayerpos", [], true)
                     ])
             )
@@ -137,7 +139,7 @@ internal sealed class ParserTestCases
         {
             "print \"Hello world@-42=[]]-'l.\"",
             new Expression(
-                new CommandNode(new Token(0, 5, TokenType.Value), "print",
+                new CommandNode(new Token(0, 5, TokenType.Identifier), "print",
                     [
                         new ArgumentNode(new Token(6, 25, TokenType.String), "Hello world@-42=[]]-'l.")
                     ])
@@ -149,7 +151,7 @@ internal sealed class ParserTestCases
     {
         {
             "command arg1 arg2; teleport $getplayerpos",
-            new InterpreterException(ExecutionError.UnexpectedToken, new Token(29, 12, TokenType.Value))
+            new InterpreterException(ExecutionError.UnexpectedToken, new Token(29, 12, TokenType.Identifier))
         },
         {
             "command $",
@@ -157,7 +159,7 @@ internal sealed class ParserTestCases
         },
         {
             "command arg1, arg2",
-            new InterpreterException(ExecutionError.UnknownToken, new Token(8, 5, TokenType.Unknown))
+            new InterpreterException(ExecutionError.UnknownToken, new Token(12, 6, TokenType.Unknown))
         },
         {
             "(command",

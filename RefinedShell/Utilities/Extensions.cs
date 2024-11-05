@@ -6,14 +6,14 @@ using System.Reflection;
 
 namespace RefinedShell.Utilities
 {
-    internal static class Extensions
+    public static class Extensions
     {
-        public static IEnumerable<MethodInfo> WithAttribute<T>(this MethodInfo[] methodCollection) where T : Attribute
+        internal static IEnumerable<MethodInfo> WithAttribute<T>(this MethodInfo[] methodCollection) where T : Attribute
         {
             return methodCollection.Where(m => m.GetCustomAttribute<T>() != null);
         }
 
-        public static bool SequenceEqual(this ICollection a, ICollection b)
+        internal static bool SequenceEqual(this ICollection a, ICollection b)
         {
             if (a.Count != b.Count)
                 return false;
@@ -40,6 +40,11 @@ namespace RefinedShell.Utilities
                 if(e2 is IDisposable disposableE2)
                     disposableE2.Dispose();
             }
+        }
+
+        public static string Substring(this string source, ProblemSegment segment)
+        {
+            return source.Substring(segment.Start, segment.Length);
         }
     }
 }

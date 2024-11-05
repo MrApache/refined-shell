@@ -21,10 +21,4 @@ public class CommandExecution
     {
         _shell.Execute("set irisu 993");
     }
-
-    [Benchmark]
-    public void ExecuteWithoutCaching()
-    {
-        _shell.ExecuteWithoutCache("set irisu 993");
-    }
 }

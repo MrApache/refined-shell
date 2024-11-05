@@ -49,7 +49,7 @@ namespace RefinedShell.Interpreter
             {
                 if(actualArguments.Length == 0)
                 {
-                    return new ProblemSegment(commandNode.Token.Start + commandNode.Token.Length, 1,
+                    return new ProblemSegment(commandNode.Token.Start, commandNode.Token.Length,
                         ExecutionError.InsufficientArguments);
                 }
 

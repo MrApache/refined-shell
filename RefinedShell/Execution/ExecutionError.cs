@@ -51,6 +51,6 @@ namespace RefinedShell.Execution
         CommandHasNoReturnResult,
         CommandNotValid,
         ArgumentError,
-        UnhandledException,
+        Exception
     }
 }

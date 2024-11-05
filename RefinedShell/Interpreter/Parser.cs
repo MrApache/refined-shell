@@ -48,7 +48,7 @@ namespace RefinedShell.Interpreter
                 Token token = _currentToken;
                 switch (token.Type)
                 {
-                    case TokenType.Value:
+                    case TokenType.Identifier:
                     {
                         commandNode = ParseCommand(input);
                         break;
@@ -102,7 +102,8 @@ namespace RefinedShell.Interpreter
                         list.Add(new ArgumentNode(token, argument.ToString()));
                         break;
                     }
-                    case TokenType.Value:
+                    case TokenType.Number:
+                    case TokenType.Identifier:
                     {
                         ReadOnlySpan<char> argument = input.Slice(token.Start, token.Length);
                         list.Add(new ArgumentNode(token, argument.ToString()));
@@ -122,7 +123,6 @@ namespace RefinedShell.Interpreter
                     }
                     case TokenType.OpenParenthesis:
                     {
-                        //throw new InterpreterException(ExecutionError.InvalidUsageOfToken, token);
                         throw new InterpreterException(ExecutionError.UnexpectedToken, token);
                     }
                     case TokenType.CloseParenthesis:
@@ -164,7 +164,7 @@ namespace RefinedShell.Interpreter
         
         private CommandNode ParseCommand(ReadOnlySpan<char> input, bool inline = false)
         {
-            if (Match(TokenType.Value | TokenType.Dollar) == null)
+            if (Match(TokenType.Identifier | TokenType.Dollar) == null)
             {
                 throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
             }

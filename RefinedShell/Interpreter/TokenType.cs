@@ -6,12 +6,14 @@ namespace RefinedShell.Interpreter
     internal enum TokenType
     {
         Unknown = 0,
-        Value = 2,
-        Semicolon = 4,
-        Dollar = 8,
-        OpenParenthesis = 16,
-        CloseParenthesis = 32,
-        String = 64,
-        EndOfLine = 128
+        EndOfLine = 1,
+        Semicolon = 2,
+        Dollar = 4,
+        OpenParenthesis = 8,
+        CloseParenthesis = 16,
+        String = 32,
+        Number = 64,
+        Whitespace = 128,
+        Identifier = 256
     }
 }

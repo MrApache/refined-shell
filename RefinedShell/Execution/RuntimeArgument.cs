@@ -6,7 +6,7 @@ namespace RefinedShell.Execution
     {
         private readonly ITypeParser _parser;
         private readonly IArgument[] _arguments;
-        private readonly string[] _tempPool;
+        private readonly string?[] _tempPool;
 
         public RuntimeArgument(IArgument[] arguments, ITypeParser parser)
         {
@@ -17,23 +17,27 @@ namespace RefinedShell.Execution
 
         public bool CanGetValue()
         {
-            bool result = true;
+            bool canGetValue = true;
             foreach (IArgument argument in _arguments)
             {
                 if (argument is ExecutableInlineCommand cic)
-                    result &= cic.CanGetValue();
+                    canGetValue &= cic.CanGetValue();
             }
 
-            return result;
+            if (!canGetValue)
+                return false;
+
+            for (int i = 0; i < _arguments.Length; i++)
+            {
+                object? value = _arguments[i].GetValue();
+                _tempPool[i] = value?.ToString();
+            }
+
+            return _parser.CanParse(_tempPool);
         }
 
         public object GetValue()
         {
-            for (int i = 0; i < _arguments.Length; i++)
-            {
-                _tempPool[i] = _arguments[i].GetValue()?.ToString();
-            }
-
             return _parser.Parse(_tempPool);
         }
     }

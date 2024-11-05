@@ -1,4 +1,3 @@
-#define XDDDD
 using BenchmarkDotNet.Attributes;
 
 namespace RefinedShell.Tests.Benchmark;
@@ -18,19 +17,19 @@ public class ShellMethods
     [ShellCommand("set")]
     private static void SetValue(string name, int value) { }
 
-    [Benchmark]
+    //[Benchmark]
     public void GetAllCommands()
     {
         _shell.GetAllCommands();
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void GetAllCommands_Func()
     {
         _shell.GetCommands(_ => true);
     }
 
-    [Benchmark]
+    //[Benchmark]
     public void GetCommandsThatStartsWith()
     {
         IEnumerable<ICommand> result = _shell.GetAllCommands().Where(c => c.Name.StartsWith("set"));
@@ -39,6 +38,9 @@ public class ShellMethods
     [Benchmark]
     public void GetCommandsThatStartsWith_Func()
     {
-        IEnumerable<ICommand> result = _shell.GetCommands(c => c.Name.StartsWith("set"));
+        for (int i = 0; i < 10000; i++)
+        {
+            IEnumerable<ICommand> result = _shell.GetCommands(c => c.Name.StartsWith("set"));
+        }
     }
 }

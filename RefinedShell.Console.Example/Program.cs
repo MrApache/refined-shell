@@ -1,6 +1,15 @@
 ﻿using RefinedShell;
 using RefinedShell.Example;
 using RefinedShell.Execution;
+using RefinedShell.Utilities;
+
+/*
+add 2147483647 + 1
+    [False]->UnknownToken: '2147483647'
+add 2147483647 1
+    [True]->-2147483648
+    */
+
 
 Shell shell = new Shell();
 CommandCollection commandCollection = new CommandCollection(shell);
@@ -26,7 +35,7 @@ while(true)
                 Console.WriteLine($"[{result.Success}]->{result.ReturnValue}");
             break;
         case ExecutionError.CommandNotFound:
-            Console.WriteLine("[F]->Command not found");
+            Console.WriteLine($"[{result.Success}]->Command '{input.Substring(result.Segment)}' not found");
             break;
         case ExecutionError.UnknownToken:
         case ExecutionError.InvalidUsageOfToken:
@@ -34,15 +43,20 @@ while(true)
         case ExecutionError.InsufficientArguments:
         case ExecutionError.TooManyArguments:
         case ExecutionError.InvalidArgumentType:
-            Console.WriteLine($"[{result.Success}]->{result.Error}: '{input.Substring(result.Segment.Start, result.Segment.Length)}'");
+            Console.WriteLine($"[{result.Success}]->{result.Error}: '{input.Substring(result.Segment)}'");
             break;
         case ExecutionError.CommandHasNoReturnResult:
+            Console.WriteLine($"[{result.Success}]->Command '{input.Substring(result.Segment)}' has no return result");
             break;
         case ExecutionError.CommandNotValid:
+            Console.WriteLine($"[{result.Success}]->Command '{input.Substring(result.Segment)}' is not valid");
             break;
         case ExecutionError.ArgumentError:
+            Console.WriteLine("TODO: ArgumentError");
             break;
-        case ExecutionError.UnhandledException:
+        case ExecutionError.Exception:
+            Exception exception = (Exception)result.ReturnValue!;
+            Console.WriteLine($"[{result.Success}]->{exception.GetType().Name}: {exception.Message}");
             break;
         default:
             throw new ArgumentOutOfRangeException();

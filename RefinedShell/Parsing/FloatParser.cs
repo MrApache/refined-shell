@@ -15,16 +15,16 @@ namespace RefinedShell.Parsing
             _format.NumberDecimalSeparator = ".";
         }
 
-        public bool CanParse(ReadOnlySpan<string> input)
+        public bool CanParse(ReadOnlySpan<string?> input)
         {
             return float.TryParse(input[0],
                 NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign | NumberStyles.AllowExponent,
                 _format, out float _);
         }
 
-        public object Parse(ReadOnlySpan<string> input)
+        public object Parse(ReadOnlySpan<string?> input)
         {
-            return float.Parse(input[0], _format);
+            return float.Parse(input[0]!, _format);
         }
     }
 }

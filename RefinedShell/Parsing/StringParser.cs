@@ -6,14 +6,14 @@ namespace RefinedShell.Parsing
     {
         public uint OptionsCount => 1;
 
-        public bool CanParse(ReadOnlySpan<string> input)
+        public bool CanParse(ReadOnlySpan<string?> input)
         {
-            return true;
+            return input[0] != null;
         }
 
-        public object Parse(ReadOnlySpan<string> input)
+        public object Parse(ReadOnlySpan<string?> input)
         {
-            return input[0];
+            return input[0]!;
         }
     }
 }

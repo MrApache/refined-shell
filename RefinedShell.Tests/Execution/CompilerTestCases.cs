@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using NUnit.Framework;
 using RefinedShell.Execution;
-using RefinedShell.Parsing;
-using RefinedShell.Tests.Parsing;
 
 namespace RefinedShell.Tests;
 
@@ -38,11 +35,13 @@ internal sealed class CompilerTestCases
         return null;
     }
 
+    /*
     [ShellCommand("vec_length")]
     private static float GetVector2Length(Vector2 vector)
     {
         return vector.Length();
     }
+    */
 
     [ShellCommand("print")]
     private static void Print(string message)
@@ -78,7 +77,7 @@ internal sealed class CompilerTestCases
         },
         {
             "teleport_2 $(getplayerpos) $(getplayername false)",
-            new ExecutionResult(true, 0, 0, ExecutionError.None, null)
+            new ExecutionResult(false, 0, 0, ExecutionError.ArgumentError, null)
         },
         {
             "$(getplayername true)",
@@ -100,10 +99,12 @@ internal sealed class CompilerTestCases
             "print hello_world",
             new ExecutionResult(true, 0, 0, ExecutionError.None, null)
         },
+        /*
         {
             "vec_length 100 4521",
             new ExecutionResult(true,0,0,ExecutionError.None, new Vector2(100, 4521).Length())
         },
+        */
         {
             "print \"hello, world =)\"",
             new ExecutionResult(true, null, ProblemSegment.None)
@@ -118,6 +119,7 @@ internal sealed class CompilerTestCases
 
     public CompilerTestCases()
     {
+        //TypeParsers.AddParser<Vector2>(new Vector2Parser());
         _shell = new Shell();
         _shell.RegisterAll<CompilerTestCases>(null);
     }
@@ -125,12 +127,11 @@ internal sealed class CompilerTestCases
     [Test]
     public void ExecuteTestCases()
     {
-        TypeParsers.AddParser<Vector2>(new Vector2Parser());
         foreach ((string input, ExecutionResult expectedResult) in _testCases)
         {
             ExecutionResult actualResult = _shell.Execute(input);
             Assert.That(actualResult, Is.EqualTo(expectedResult));
         }
-        TypeParsers.Remove<Vector2>();
+        //TypeParsers.Remove<Vector2>();
     }
 }

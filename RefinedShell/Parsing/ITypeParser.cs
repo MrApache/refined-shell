@@ -17,13 +17,13 @@ namespace RefinedShell.Parsing
         /// </summary>
         /// <param name="input">The input to check for parse capability.</param>
         /// <returns><c>true</c> if the parser can parse the input; otherwise, <c>false</c>.</returns>
-        public bool CanParse(ReadOnlySpan<string> input);
+        public bool CanParse(ReadOnlySpan<string?> input);
 
         /// <summary>
         /// Parses the specified input into an object of the target type.
         /// </summary>
         /// <param name="input">The input to parse.</param>
         /// <returns>The parsed object.</returns>
-        public object Parse(ReadOnlySpan<string> input);
+        public object Parse(ReadOnlySpan<string?> input);
     }
 }

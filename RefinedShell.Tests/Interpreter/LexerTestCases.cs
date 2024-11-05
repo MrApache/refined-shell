@@ -4,213 +4,201 @@ using NUnit.Framework;
 using RefinedShell.Interpreter;
 using TokenType = RefinedShell.Interpreter.TokenType;
 
-namespace RefinedShell.Tests
+namespace RefinedShell.Tests;
+
+[TestFixture]
+[TestOf(typeof(Lexer))]
+internal sealed class LexerTestCases
 {
-    [TestFixture]
-    [TestOf(typeof(Lexer))]
-    internal sealed class LexerTestCases
+    private readonly Dictionary<string, List<(string, TokenType)>> _testCases
+        = new Dictionary<string, List<(string, TokenType)>>
+        {
+
+            ["print \"hello, world!!!()@(@_)_\""] =
+            [
+                ("print", TokenType.Identifier),
+                ("\"hello, world!!!()@(@_)_\"", TokenType.String)
+            ],
+
+            ["print \"Hello world@-42=[]]-'l.\""] =
+            [
+                ("print", TokenType.Identifier),
+                ("\"Hello world@-42=[]]-'l.\"", TokenType.String)
+            ],
+
+            ["command arg1 arg2; teleport $(getplayerpos)"] =
+            [
+                ("command", TokenType.Identifier),
+                ("arg1", TokenType.Identifier),
+                ("arg2", TokenType.Identifier),
+                (";", TokenType.Semicolon),
+                ("teleport", TokenType.Identifier),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("getplayerpos", TokenType.Identifier),
+                (")", TokenType.CloseParenthesis)
+            ],
+
+            ["command 12345 67890 teleport"] =
+            [
+                ("command", TokenType.Identifier),
+                ("12345", TokenType.Number),
+                ("67890", TokenType.Number),
+                ("teleport", TokenType.Identifier)
+            ],
+
+            ["move $(wrongformat); teleport here"] =
+            [
+                ("move", TokenType.Identifier),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("wrongformat", TokenType.Identifier),
+                (")", TokenType.CloseParenthesis),
+                (";", TokenType.Semicolon),
+                ("teleport", TokenType.Identifier),
+                ("here", TokenType.Identifier)
+            ],
+            ["teleport $(getplayerpos arg1 arg2 arg3) $(123arg2)"] =
+            [
+                ("teleport", TokenType.Identifier),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("getplayerpos", TokenType.Identifier),
+                ("arg1", TokenType.Identifier),
+                ("arg2", TokenType.Identifier),
+                ("arg3", TokenType.Identifier),
+                (")", TokenType.CloseParenthesis),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("123", TokenType.Number), //Error
+                ("arg2", TokenType.Identifier), //Error
+                (")", TokenType.CloseParenthesis)
+            ],
+            ["command ; move          right 20 ; attack"] =
+            [
+                ("command", TokenType.Identifier),
+                (";", TokenType.Semicolon),
+                ("move", TokenType.Identifier),
+                ("right", TokenType.Identifier),
+                ("20", TokenType.Number),
+                (";", TokenType.Semicolon),
+                ("attack", TokenType.Identifier)
+            ],
+
+            [" ; teleport"] =
+            [
+                (";", TokenType.Semicolon),
+                ("teleport", TokenType.Identifier)
+            ],
+
+            ["command $(getpos $(get_player this)) $ ( getplayerpos )"] =
+            [
+                ("command", TokenType.Identifier),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("getpos", TokenType.Identifier),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("get_player", TokenType.Identifier),
+                ("this", TokenType.Identifier),
+                (")", TokenType.CloseParenthesis),
+                (")", TokenType.CloseParenthesis),
+                ("$", TokenType.Dollar),
+                ("(", TokenType.OpenParenthesis),
+                ("getplayerpos", TokenType.Identifier),
+                (")", TokenType.CloseParenthesis)
+            ],
+
+            ["123 123 123"] =
+            [
+                ("123", TokenType.Number),
+                ("123", TokenType.Number),
+                ("123", TokenType.Number)
+            ],
+
+            ["-command arg1 arg2"] =
+            [
+                ("-command", TokenType.Unknown),
+                ("arg1", TokenType.Identifier),
+                ("arg2", TokenType.Identifier)
+            ],
+
+            ["-command arg@1 arg@2"] =
+            [
+                ("-command", TokenType.Unknown),
+                ("arg", TokenType.Identifier),
+                ("@1", TokenType.Unknown),
+                ("arg", TokenType.Identifier),
+                ("@2", TokenType.Unknown)
+            ],
+
+            ["command $ teleport, arg1 arg2 , $(getpos)"] =
+            [
+                ("command", TokenType.Identifier),
+                ("$", TokenType.Dollar),
+                ("teleport", TokenType.Identifier),
+                (", arg1", TokenType.Unknown),
+                ("arg2", TokenType.Identifier),
+                (", $", TokenType.Unknown),
+                ("(", TokenType.OpenParenthesis),
+                ("getpos", TokenType.Identifier),
+                (")", TokenType.CloseParenthesis)
+            ],
+            ["print \"message \" \" "] =
+            [
+                ("print", TokenType.Identifier),
+                ("\"message \"", TokenType.String),
+                ("\" ", TokenType.Unknown)
+            ]
+        };
+
+    private Lexer _lexer = null!;
+
+    [SetUp]
+    public void Setup()
     {
-        private readonly Dictionary<string, List<(string, TokenType)>> _testCases
-            = new Dictionary<string, List<(string, TokenType)>>
-            {
-                ["print \"message \" \" "] =
-                    new List<(string, TokenType)>
-                    {
-                        ("print", TokenType.Value),
-                        ("\"message \"", TokenType.String),
-                        ("\" ", TokenType.Unknown) //Error
-                    },
-                ["print \"hello, world!!!()@(@_)_\""] =
-                    new List<(string, TokenType)>
-                    {
-                        ("print", TokenType.Value),
-                        ("\"hello, world!!!()@(@_)_\"", TokenType.String)
-                    },
-                ["print \"Hello world@-42=[]]-'l.\""] =
-                    new List<(string, TokenType)>
-                    {
-                         ("print", TokenType.Value),
-                         ("\"Hello world@-42=[]]-'l.\"", TokenType.String)
-                    },
-                ["command arg1 arg2; teleport $(getplayerpos)"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("command", TokenType.Value),
-                        ("arg1", TokenType.Value),
-                        ("arg2", TokenType.Value),
-                        (";", TokenType.Semicolon),
-                        ("teleport", TokenType.Value),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("getplayerpos", TokenType.Value),
-                        (")", TokenType.CloseParenthesis)
-                    },
+        _lexer = new Lexer();
+    }
 
-                ["command 12345 67890 teleport"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("command", TokenType.Value),
-                        ("12345", TokenType.Value),
-                        ("67890", TokenType.Value),
-                        ("teleport", TokenType.Value)
-                    },
-
-                ["move $(wrongformat); teleport here"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("move", TokenType.Value),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("wrongformat", TokenType.Value),
-                        (")", TokenType.CloseParenthesis),
-                        (";", TokenType.Semicolon),
-                        ("teleport", TokenType.Value),
-                        ("here", TokenType.Value)
-                    },
-
-                ["teleport $(getplayerpos arg1 arg2 arg3) $(123arg2)"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("teleport", TokenType.Value),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("getplayerpos", TokenType.Value),
-                        ("arg1", TokenType.Value),
-                        ("arg2", TokenType.Value),
-                        ("arg3", TokenType.Value),
-                        (")", TokenType.CloseParenthesis),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("123arg2", TokenType.Value), //hmm
-                        (")", TokenType.CloseParenthesis)
-                    },
-
-                ["command ; move          right 20 ; attack"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("command", TokenType.Value),
-                        (";", TokenType.Semicolon),
-                        ("move", TokenType.Value),
-                        ("right", TokenType.Value),
-                        ("20", TokenType.Value),
-                        (";", TokenType.Semicolon),
-                        ("attack", TokenType.Value)
-                    },
-
-                [" ; teleport"] =
-                    new List<(string, TokenType)>
-                    {
-                        (";", TokenType.Semicolon),
-                        ("teleport", TokenType.Value)
-                    },
-
-                ["command $(getpos $(get_player this)) $ ( getplayerpos )"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("command", TokenType.Value),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("getpos", TokenType.Value),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("get_player", TokenType.Value),
-                        ("this", TokenType.Value),
-                        (")", TokenType.CloseParenthesis),
-                        (")", TokenType.CloseParenthesis),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("getplayerpos", TokenType.Value),
-                        (")", TokenType.CloseParenthesis)
-                    },
-
-                ["123 123 123"] = //hmm
-                    new List<(string, TokenType)>
-                    {
-                        ("123", TokenType.Value),
-                        ("123", TokenType.Value),
-                        ("123", TokenType.Value)
-                    },
-
-                ["-command arg1 arg2"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("-command", TokenType.Unknown),
-                        ("arg1", TokenType.Value),
-                        ("arg2", TokenType.Value)
-                    },
-
-                ["-command arg@1 arg@2"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("-command", TokenType.Unknown),
-                        ("arg@1", TokenType.Unknown),
-                        ("arg@2", TokenType.Unknown)
-                    },
-
-                ["command $ teleport, arg1 arg2 , $(getpos)"] =
-                    new List<(string, TokenType)>
-                    {
-                        ("command", TokenType.Value),
-                        ("$", TokenType.Dollar),
-                        ("teleport,", TokenType.Unknown),
-                        ("arg1", TokenType.Value),
-                        ("arg2", TokenType.Value),
-                        (",", TokenType.Unknown),
-                        ("$", TokenType.Dollar),
-                        ("(", TokenType.OpenParenthesis),
-                        ("getpos", TokenType.Value),
-                        (")", TokenType.CloseParenthesis)
-                    }
-            };
-
-        private Lexer _lexer = null!;
-        
-        [SetUp]
-        public void Setup()
+    [Test]
+    public void Tokenize()
+    {
+        foreach ((string input, List<(string, TokenType)> result) in _testCases)
         {
-            _lexer = new Lexer();
-        }
-
-        [Test]
-        public void Tokenize()
-        {
-            foreach ((string input, List<(string, TokenType)> result) in _testCases)
+            List<(string, TokenType)> tokenizeResult = Tokenize(input);
+            Assert.That(tokenizeResult.Count, Is.EqualTo(result.Count), $"Input: {input}");
+            for (int i = 0; i < tokenizeResult.Count; i++)
             {
-                List<(string, TokenType)> tokenizeResult = Tokenize(input);
-                Assert.That(tokenizeResult.Count, Is.EqualTo(result.Count), $"Input: {input}");
-                for (int i = 0; i < tokenizeResult.Count; i++)
-                {
-                    ValueTuple<string, TokenType> token = tokenizeResult[i];
-                    ValueTuple<string, TokenType> testCaseResult = result[i];
-                    bool stringEquals = token.Item1.Equals(testCaseResult.Item1);
-                    bool typeEquals = token.Item2 == testCaseResult.Item2;
-                    Assert.That(stringEquals, Is.True, $"Expected: {token.Item1}, But was: {testCaseResult.Item1}");
-                    Assert.That(typeEquals, Is.True, $"Input: {input}, Type:{testCaseResult.Item2}, ActualType: {token.Item2}");
-                }
+                ValueTuple<string, TokenType> token = tokenizeResult[i];
+                ValueTuple<string, TokenType> testCaseResult = result[i];
+                bool stringEquals = token.Item1.Equals(testCaseResult.Item1);
+                bool typeEquals = token.Item2 == testCaseResult.Item2;
+                Assert.That(stringEquals, Is.True, $"Expected: {token.Item1}, But was: {testCaseResult.Item1}");
+                Assert.That(typeEquals, Is.True, $"Input: {input}, Type:{testCaseResult.Item2}, ActualType: {token.Item2}");
             }
         }
+    }
 
-        [Test]
-        public void TokenizeEndOfLine()
-        {
-            _lexer.SetInputString("command");
-            Token token = _lexer.GetNextToken();
-            Assert.That(token.Type, Is.EqualTo(TokenType.Value));
-            token = _lexer.GetNextToken();
-            Assert.That(token.Type, Is.EqualTo(TokenType.EndOfLine));
-        }
+    [Test]
+    public void TokenizeEndOfLine()
+    {
+        _lexer.SetInputString("command");
+        Token token = _lexer.GetNextToken();
+        Assert.That(token.Type, Is.EqualTo(TokenType.Identifier));
+        token = _lexer.GetNextToken();
+        Assert.That(token.Type, Is.EqualTo(TokenType.EndOfLine));
+    }
 
-        private List<(string, TokenType)> Tokenize(ReadOnlySpan<char> input)
+    private List<(string, TokenType)> Tokenize(ReadOnlySpan<char> input)
+    {
+        List<(string, TokenType)> list = [];
+        _lexer.SetInputString(input.ToString());
+        Token token;
+        while((token = _lexer.GetNextToken()).Type != TokenType.EndOfLine)
         {
-            List<(string, TokenType)> list = new List<(string, TokenType)>();
-            _lexer.SetInputString(input.ToString());
-            Token token;
-            while((token = _lexer.GetNextToken()).Type != TokenType.EndOfLine)
-            {
-                string str = input.Slice(token.Start, token.Length).ToString();
-                list.Add(new ValueTuple<string, TokenType>(str, token.Type));
-            }
-            return list;
+            string str = input.Slice(token.Start, token.Length).ToString();
+            list.Add(new ValueTuple<string, TokenType>(str, token.Type));
         }
+        return list;
     }
 }

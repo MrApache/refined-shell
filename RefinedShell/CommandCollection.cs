@@ -21,7 +21,7 @@ namespace RefinedShell
 
         public CommandCollection()
         {
-            _commands = new Dictionary<StringToken, ICommand>();
+            _commands = new Dictionary<StringToken, ICommand>(32);
         }
 
         public void Add(ICommand item)
@@ -50,9 +50,9 @@ namespace RefinedShell
             return false;
         }
         
-        public void Remove(StringToken name, out ICommand command)
+        public bool Remove(StringToken name, out ICommand command)
         {
-            _commands.Remove(name, out command);
+            return _commands.Remove(name, out command);
         }
 
         public bool Remove(ICommand item)

@@ -17,7 +17,7 @@ internal sealed class Vector2Parser : ITypeParser
         _format.NumberDecimalSeparator = ".";
     }
 
-    public bool CanParse(ReadOnlySpan<string> input)
+    public bool CanParse(ReadOnlySpan<string?> input)
     {
         bool firstValue = float.TryParse(input[0],
             NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign | NumberStyles.AllowExponent,
@@ -30,10 +30,10 @@ internal sealed class Vector2Parser : ITypeParser
         return firstValue && secondValue;
     }
 
-    public object Parse(ReadOnlySpan<string> input)
+    public object Parse(ReadOnlySpan<string?> input)
     {
-        float x = float.Parse(input[0], _format);
-        float y = float.Parse(input[1], _format);
+        float x = float.Parse(input[0]!, _format);
+        float y = float.Parse(input[1]!, _format);
         return new Vector2(x, y);
     }
 }

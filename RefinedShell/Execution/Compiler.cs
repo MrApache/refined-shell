@@ -41,7 +41,7 @@ namespace RefinedShell.Execution
         {
             ICommand command = _commandCollection[commandNode.Command];
             IArgument[] arguments = ParseArguments(command, commandNode.Arguments);
-            return new ExecutableCommand(command, arguments);
+            return new ExecutableCommand(command, arguments, commandNode.Token);
         }
 
         private IArgument[] ParseArguments(ICommand command, Node[] argumentNodes)

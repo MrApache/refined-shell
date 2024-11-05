@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using RefinedShell.Execution;
 using RefinedShell.Interpreter;
+using RefinedShell.Parsing;
 using RefinedShell.Utilities;
 
 namespace RefinedShell
@@ -32,8 +33,8 @@ namespace RefinedShell
         /// <param name="catchExceptions">Indicates whether to catch exceptions during command execution.</param>
         public Shell(bool catchExceptions = true)
         {
-            _aliases = new Dictionary<StringToken, StringToken>();
-            _cache = new Dictionary<StringToken, ExecutableExpression>();
+            _aliases = new Dictionary<StringToken, StringToken>(32);
+            _cache = new Dictionary<StringToken, ExecutableExpression>(32);
             _commands = new CommandCollection();
             _parser = new Parser();
             _analyzer = new SemanticAnalyzer(_commands);
@@ -41,7 +42,13 @@ namespace RefinedShell
             _executor = catchExceptions ? (IExecutor)new SafeExecutor() : new UnsafeExecutor();
         }
 
-        internal (Expression? expression, ProblemSegment problem) Analyze(StringToken input)
+        public ExecutionResult Analyze(StringToken input)
+        {
+            ValueTuple<Expression?, ProblemSegment> tuple = AnalyzeInternal(input);
+            return new ExecutionResult(false, null, tuple.Item2);
+        }
+
+        private (Expression? expression, ProblemSegment problem) AnalyzeInternal(StringToken input)
         {
             Expression? expression;
             ProblemSegment segment;
@@ -65,20 +72,26 @@ namespace RefinedShell
         /// <returns>An <see cref="ExecutionResult"/> indicating the result of the execution.</returns>
         public ExecutionResult Execute(StringToken input)
         {
-            if (input.IsEmpty)
+            if (input.IsEmpty) {
                 return new ExecutionResult(false, null, ProblemSegment.None);
+            }
 
-            if(_aliases.TryGetValue(input, out StringToken alias))
+            if(_aliases.TryGetValue(input, out StringToken alias)) {
                 input = alias;
+            }
 
-            if (_cache.TryGetValue(input, out ExecutableExpression compiledExpression))
+            if (_cache.TryGetValue(input, out ExecutableExpression compiledExpression)) {
                 return _executor.Execute(compiledExpression);
+            }
 
-            (Expression? expression, ProblemSegment error) = Analyze(input);
-            if (error != ProblemSegment.None)
+            (Expression? expression, ProblemSegment error) = AnalyzeInternal(input);
+            if (error != ProblemSegment.None) {
                 return new ExecutionResult(false, null, error);
+            }
+
             compiledExpression = _compiler.Compile(expression!);
             _cache[input] = compiledExpression;
+
             return _executor.Execute(compiledExpression);
         }
 
@@ -121,6 +134,14 @@ namespace RefinedShell
             if (name.IsEmpty)
                 return;
             ThrowIfContains(name); // Maybe replace with logs
+
+            ParameterInfo[] parameters = d.Method.GetParameters();
+            foreach (ParameterInfo parameter in parameters)
+            {
+                if (!TypeParsers.Contains(parameter.ParameterType))
+                    throw new Exception($"Parser for type '{parameter.ParameterType}' not found");
+            }
+
             _commands[name] = new DelegateCommand(name, d);
         }
 
@@ -134,6 +155,11 @@ namespace RefinedShell
             if (alias.IsEmpty || input.IsEmpty)
                 return;
             _aliases[alias] = input;
+        }
+
+        public void DeleteAlias(StringToken alias)
+        {
+            _aliases.Remove(alias);
         }
 
         private void ThrowIfContains(StringToken name)
@@ -164,16 +190,30 @@ namespace RefinedShell
             }
         }
 
+        //Add remarks
+        /// <summary>
+        /// Unregister all commands
+        /// </summary>
+        public void UnregisterAll(bool clearCache = true)
+        {
+            foreach (ICommand command in _commands)
+                command.Dispose();
+            if(clearCache)
+                _cache.Clear();
+            _commands.Clear();
+        }
+
         /// <summary>
         /// Unregisters a command with the specified name.
         /// </summary>
         /// <param name="name">The name of the command</param>
-        public void Unregister(StringToken name)
+        public bool Unregister(StringToken name)
         {
             if (!_commands.Contains(name))
-                return;
-            _commands.Remove(name, out ICommand command);
+                return false;
+            bool result = _commands.Remove(name, out ICommand command);
             command.Dispose();
+            return result;
         }
 
         /// <summary>

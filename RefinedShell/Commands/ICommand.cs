@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using RefinedShell.Execution;
 
 namespace RefinedShell
 {
@@ -29,7 +28,7 @@ namespace RefinedShell
         /// </summary>
         /// <param name="args">An array of objects representing the arguments for the command.</param>
         /// <returns>The result of the command execution.</returns>
-        public ExecutionResult Execute(object[] args);
+        public ExecutionResult Execute(object?[] args);
         
         /// <summary>
         /// Validates whether the command can be executed with the provided arguments.

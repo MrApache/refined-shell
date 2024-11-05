@@ -8,8 +8,10 @@ namespace RefinedShell.Tests;
 internal sealed class CommandCollectionTest : DefaultShellSetup_Static
 {
     [Test]
-    public void GetCount()
+    public void RemoveAll()
     {
         Assert.That(Shell.Count, Is.EqualTo(3));
+        Shell.UnregisterAll();
+        Assert.That(Shell.Count, Is.EqualTo(0));
     }
 }
