@@ -19,8 +19,8 @@ internal sealed class Executors
     {
         _unsafe = new Shell(false);
         _safe = new Shell();
-        _unsafe.RegisterAll<Executors>(null);
-        _safe.RegisterAll<Executors>(null);
+        _unsafe.RegisterAllWithAttribute<Executors>(null);
+        _safe.RegisterAllWithAttribute<Executors>(null);
     }
 
     [ShellCommand("getPlayer")]

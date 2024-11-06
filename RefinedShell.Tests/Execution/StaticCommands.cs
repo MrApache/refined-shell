@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using RefinedShell.Commands;
 
 namespace RefinedShell.Tests;
 

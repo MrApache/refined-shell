@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using RefinedShell.Commands;
 using RefinedShell.Utilities;
 
 namespace RefinedShell

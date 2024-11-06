@@ -83,7 +83,7 @@ internal sealed class SemanticAnalyzerTestCases
     public void Setup()
     {
         _shell = new Shell();
-        _shell.RegisterAll<SemanticAnalyzerTestCases>(null);
+        _shell.RegisterAllWithAttribute<SemanticAnalyzerTestCases>(null);
     }
 
     [Test]
@@ -91,7 +91,7 @@ internal sealed class SemanticAnalyzerTestCases
     {
         foreach ((string input, ExecutionError errorType) in _testCases)
         {
-            ProblemSegment error = _shell.Analyze(input).Segment;
+            ProblemSegment error = _shell.Analyze(input);
             Assert.That(error.Error, Is.EqualTo(errorType));
         }
     }

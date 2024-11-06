@@ -6,7 +6,7 @@ internal sealed class ClassWithCommands
 {
     public ClassWithCommands(Shell shell)
     {
-        shell.RegisterAll(this);
+        shell.RegisterAllWithAttribute(this);
         shell.Register(GetRandom, "random");
     }
 

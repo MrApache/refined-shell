@@ -3,7 +3,7 @@ using System;
 namespace RefinedShell.Interpreter
 {
     [Flags]
-    internal enum TokenType
+    internal enum TokenType : short
     {
         Unknown = 0,
         EndOfLine = 1,

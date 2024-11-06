@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using RefinedShell.Commands;
 
 namespace RefinedShell.Tests.Benchmark;
 
@@ -10,8 +11,8 @@ public class ShellMethods
     public ShellMethods()
     {
         _shell = new Shell();
-        _shell.RegisterAll<ShellMethods>(null);
-        _shell.RegisterAll<CommandCollection>(null);
+        _shell.RegisterAllWithAttribute<ShellMethods>(null);
+        _shell.RegisterAllWithAttribute<CommandCollection>(null);
     }
 
     [ShellCommand("set")]

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using RefinedShell.Commands;
 using RefinedShell.Execution;
 using RefinedShell.Interpreter;
-using RefinedShell.Parsing;
 using RefinedShell.Utilities;
 
 namespace RefinedShell
@@ -12,7 +12,7 @@ namespace RefinedShell
     /// <summary>
     /// Represents a shell that can execute commands.
     /// </summary>
-    public sealed class Shell
+    public sealed partial class Shell
     {
         private readonly Dictionary<StringToken, StringToken> _aliases;
         private readonly Dictionary<StringToken, ExecutableExpression> _cache;
@@ -42,29 +42,6 @@ namespace RefinedShell
             _executor = catchExceptions ? (IExecutor)new SafeExecutor() : new UnsafeExecutor();
         }
 
-        public ExecutionResult Analyze(StringToken input)
-        {
-            ValueTuple<Expression?, ProblemSegment> tuple = AnalyzeInternal(input);
-            return new ExecutionResult(false, null, tuple.Item2);
-        }
-
-        private (Expression? expression, ProblemSegment problem) AnalyzeInternal(StringToken input)
-        {
-            Expression? expression;
-            ProblemSegment segment;
-            try
-            {
-                expression = _parser.GetExpression(input);
-                segment = _analyzer.Analyze(expression);
-            }
-            catch (InterpreterException e)
-            {
-                expression = null;
-                segment = new ProblemSegment(e.Token.Start, e.Token.Length, e.Error);
-            }
-            return new ValueTuple<Expression?, ProblemSegment>(expression, segment);
-        }
-
         /// <summary>
         /// Executes the specified input as a command.
         /// </summary>
@@ -89,38 +66,46 @@ namespace RefinedShell
                 return new ExecutionResult(false, null, error);
             }
 
-            compiledExpression = _compiler.Compile(expression!);
+            if(expression!.Count == 0)
+                return new ExecutionResult(false, null, ProblemSegment.None);
+
+            compiledExpression = _compiler.Compile(expression);
             _cache[input] = compiledExpression;
 
             return _executor.Execute(compiledExpression);
         }
 
+        public ProblemSegment Analyze(StringToken input)
+        {
+            ValueTuple<Expression?, ProblemSegment> tuple = AnalyzeInternal(input);
+            return tuple.Item2;
+        }
+
         //Maybe add logs
+        //Rewrite docs
         /// <summary>
-        /// Registers all methods with <see cref="ShellCommandAttribute"/> in the specified source as shell commands.
+        /// Registers all methods with <see cref="ShellCommandAttribute"/> in the specified source.
         /// </summary>
         /// <typeparam name="T">The type containing the methods to register.</typeparam>
-        /// <param name="source">An instance of the type to use, or <c>null</c> for static methods.</param>
-        public void RegisterAll<T>(T? source) where T : class
+        /// <param name="target">An instance of the type to use, or <c>null</c> for static methods.</param>
+        public void RegisterAllWithAttribute<T>(T? target) where T : class
         {
-            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-            if (source != null)
-                flags |= BindingFlags.Instance;
-
-            IEnumerable<MethodInfo> methods = typeof(T)
-                .GetMethods(flags)
-                .WithAttribute<ShellCommandAttribute>();
-
-            foreach (MethodInfo method in methods)
+            foreach (MemberInfo member in GetMembers<T>(target != null))
             {
-                Type type = System.Linq.Expressions.Expression.GetDelegateType(method.GetParameters()
-                    .Select(arg => arg.ParameterType)
-                    .Append(method.ReturnType).ToArray());
-                Delegate d = method.IsStatic ?
-                    method.CreateDelegate(type) :
-                    method.CreateDelegate(type, source);
-                string name = method.GetCustomAttribute<ShellCommandAttribute>()!.Name ?? method.Name;
-                Register(d, name);
+                RegisterMemberInternal(member, target, member.GetName());
+            }
+        }
+
+        /// <summary>
+        /// Unregisters all methods with <see cref="ShellCommandAttribute"/> in the specified source.
+        /// </summary>
+        /// <typeparam name="T">The type containing the methods to unregister.</typeparam>
+        /// <param name="target">An instance of the type to use, or <c>null</c> for static methods.</param>
+        public void UnregisterAllWithAttribute<T>(T? target) where T : class
+        {
+            foreach (MemberInfo member in GetMembers<T>(target != null))
+            {
+                Unregister(member.GetName());
             }
         }
 
@@ -133,16 +118,44 @@ namespace RefinedShell
         {
             if (name.IsEmpty)
                 return;
-            ThrowIfContains(name); // Maybe replace with logs
+            RegisterMethodInternal(d.Method, d.Target, name);
+        }
 
-            ParameterInfo[] parameters = d.Method.GetParameters();
-            foreach (ParameterInfo parameter in parameters)
-            {
-                if (!TypeParsers.Contains(parameter.ParameterType))
-                    throw new Exception($"Parser for type '{parameter.ParameterType}' not found");
+        /// <summary>
+        /// Unregisters a command with the specified name.
+        /// </summary>
+        /// <param name="name">The name of the command</param>
+        public bool Unregister(StringToken name)
+        {
+            if (!_commands.Contains(name))
+                return false;
+            bool result = _commands.Remove(name, out ICommand command);
+            command.Dispose();
+            return result;
+        }
+
+        public void RegisterMember<T>(string memberName, string? commandName, T? target) where T : class
+        {
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+            if (target != null)
+                flags |= BindingFlags.Instance;
+
+            MemberInfo[] members = typeof(T).GetMember(memberName, flags);
+            if (members.Length == 0)
+                throw new Exception($"Member '{memberName}' not found");
+            RegisterMemberInternal(members[0], target, commandName ?? members[0].GetName());
+        }
+
+        /// <summary>
+        /// Unregister all commands
+        /// </summary>
+        public void UnregisterAll()
+        {
+            foreach (ICommand command in _commands) {
+                command.Dispose();
             }
-
-            _commands[name] = new DelegateCommand(name, d);
+            _cache.Clear();
+            _commands.Clear();
         }
 
         /// <summary>
@@ -160,60 +173,6 @@ namespace RefinedShell
         public void DeleteAlias(StringToken alias)
         {
             _aliases.Remove(alias);
-        }
-
-        private void ThrowIfContains(StringToken name)
-        {
-            if(_commands.Contains(name))
-                throw new ArgumentException($"Command with name '{name}' is already registered.");
-        }
-
-        /// <summary>
-        /// Unregisters all methods with <see cref="ShellCommandAttribute"/> in the specified source.
-        /// </summary>
-        /// <typeparam name="T">The type containing the methods to unregister.</typeparam>
-        /// <param name="source">An instance of the type to use, or <c>null</c> for static methods.</param>
-        public void UnregisterAll<T>(T? source) where T : class
-        {
-            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-            if (source != null)
-                flags |= BindingFlags.Instance;
-
-            IEnumerable<MethodInfo> methods = typeof(T)
-                .GetMethods(flags)
-                .WithAttribute<ShellCommandAttribute>();
-
-            foreach (MethodInfo method in methods)
-            {
-                string name = method.GetCustomAttribute<ShellCommandAttribute>()!.Name ?? method.Name;
-                Unregister(name.AsMemory());
-            }
-        }
-
-        //Add remarks
-        /// <summary>
-        /// Unregister all commands
-        /// </summary>
-        public void UnregisterAll(bool clearCache = true)
-        {
-            foreach (ICommand command in _commands)
-                command.Dispose();
-            if(clearCache)
-                _cache.Clear();
-            _commands.Clear();
-        }
-
-        /// <summary>
-        /// Unregisters a command with the specified name.
-        /// </summary>
-        /// <param name="name">The name of the command</param>
-        public bool Unregister(StringToken name)
-        {
-            if (!_commands.Contains(name))
-                return false;
-            bool result = _commands.Remove(name, out ICommand command);
-            command.Dispose();
-            return result;
         }
 
         /// <summary>

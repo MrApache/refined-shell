@@ -73,6 +73,10 @@ namespace RefinedShell.Interpreter
                     {
                         throw new InterpreterException(ExecutionError.InvalidUsageOfToken, _currentToken);
                     }
+                    case TokenType.Number:
+                    {
+                        throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                    }
                     case TokenType.Unknown:
                     default:
                     {
@@ -166,6 +170,8 @@ namespace RefinedShell.Interpreter
         {
             if (Match(TokenType.Identifier | TokenType.Dollar) == null)
             {
+                if(_currentToken.Type == TokenType.Unknown)
+                    throw new InterpreterException(ExecutionError.UnknownToken, _currentToken);
                 throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
             }
 

@@ -3,7 +3,7 @@ using System.Reflection;
 using RefinedShell.Execution;
 using RefinedShell.Utilities;
 
-namespace RefinedShell
+namespace RefinedShell.Commands
 {
     internal sealed class DelegateCommand : ICommand
     {
@@ -20,20 +20,22 @@ namespace RefinedShell
 
         private bool _disposed;
 
-        internal DelegateCommand(StringToken name, Delegate d)
+        internal DelegateCommand(StringToken name, MethodInfo method, object? target)
         {
             _name = name.ToString();
-            _arguments = d.Method.GetParameters();
-            _method = d.Method;
-            if(!_method.IsStatic)
-                _target = new WeakReference(d.Target);
+            _arguments = method.GetParameters();
+            _method = method;
+            if(!_method.IsStatic) {
+                _target = new WeakReference(target);
+            }
             _returnsResult = _method.ReturnType != typeof(void);
         }
 
         public ExecutionResult Execute(object?[] args)
         {
-            if (!IsValid())
+            if (!IsValid()) {
                 return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
+            }
             object? returnValue = _method.Invoke(GetTarget(), args);
             return new ExecutionResult(true, 0, 0, ExecutionError.None, returnValue);
         }

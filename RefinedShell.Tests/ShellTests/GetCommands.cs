@@ -1,12 +1,13 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using RefinedShell.Commands;
 
 namespace RefinedShell.Tests;
 
 [TestFixture]
 [TestOf(typeof(Shell))]
-internal sealed class GetCommand
+internal sealed class GetCommands
 {
     private Shell _shell = null!;
 
@@ -14,7 +15,7 @@ internal sealed class GetCommand
     public void Setup()
     {
         _shell = new Shell();
-        _shell.RegisterAll(this);
+        _shell.RegisterAllWithAttribute(this);
     }
 
     [Test]

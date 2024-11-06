@@ -19,7 +19,7 @@ namespace RefinedShell.Interpreter
                 new TokenDefinition(TokenType.Whitespace, @"^\s+"),
                 new TokenDefinition(TokenType.String, "^\"{1}[^\"]*\"{1}"),
                 new TokenDefinition(TokenType.Identifier, "^[a-zA-Z_][a-zA-Z0-9_]*"),
-                new TokenDefinition(TokenType.Number, "^[0-9]+([.][0-9]*)?"),
+                new TokenDefinition(TokenType.Number, "^[-|+]?[0-9]+([.][0-9]*)?"),
                 new TokenDefinition(TokenType.Semicolon, "^;"),
                 new TokenDefinition(TokenType.Dollar, @"^\$"),
                 new TokenDefinition(TokenType.OpenParenthesis, @"^\("),
@@ -69,7 +69,8 @@ namespace RefinedShell.Interpreter
                         goto Start;
                     }
 
-                    return new Token(start, _position - start, TokenType.Unknown);
+                    _position = nextToken.Start;
+                    return new Token(start, nextToken.Start - start, TokenType.Unknown);
                 }
 
                 return token;
@@ -88,7 +89,7 @@ namespace RefinedShell.Interpreter
                 {
                     Token token = new Token(_position, match.Length, tokenType);
                     _position += match.Length;
-                    return token; // return token;
+                    return token;
                 }
             }
 

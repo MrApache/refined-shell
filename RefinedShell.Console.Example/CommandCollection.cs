@@ -1,3 +1,5 @@
+using RefinedShell.Commands;
+
 namespace RefinedShell.Example;
 
 internal sealed class CommandCollection
@@ -16,7 +18,7 @@ internal sealed class CommandCollection
         _shell.Register(Subtract, "subtract");
         _shell.Register(Multiply, "multiply");
         _shell.Register(Help, "help");
-        _shell.RegisterAll(this);
+        _shell.RegisterAllWithAttribute(this);
     }
 
     private int Add(int a, int b)

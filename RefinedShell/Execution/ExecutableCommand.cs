@@ -1,3 +1,4 @@
+using RefinedShell.Commands;
 using RefinedShell.Interpreter;
 
 namespace RefinedShell.Execution

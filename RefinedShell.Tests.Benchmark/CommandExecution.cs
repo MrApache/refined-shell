@@ -10,7 +10,7 @@ public class CommandExecution
     public CommandExecution()
     {
         _shell = new Shell();
-        _shell.RegisterAll<CommandExecution>(null);
+        _shell.RegisterAllWithAttribute<CommandExecution>(null);
     }
 
     [ShellCommand("set")]

@@ -9,7 +9,7 @@ internal abstract class DefaultShellSetup_Static
     protected DefaultShellSetup_Static()
     {
         Shell = new Shell();
-        Shell.RegisterAll<DefaultShellSetup_Static>(null);
+        Shell.RegisterAllWithAttribute<DefaultShellSetup_Static>(null);
         Shell.Register(GetRandom, "random");
     }
 

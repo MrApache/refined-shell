@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace RefinedShell
+namespace RefinedShell.Commands
 {
     /// <summary>
     /// Represents a command that can be executed in a shell

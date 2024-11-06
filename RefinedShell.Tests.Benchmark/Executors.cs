@@ -10,10 +10,10 @@ public class Executors
     public Executors()
     {
         _safe = new Shell();
-        _safe.RegisterAll<CommandExecution>(null);
+        _safe.RegisterAllWithAttribute<CommandExecution>(null);
 
         _unsafe = new Shell(false);
-        _unsafe.RegisterAll<CommandExecution>(null);
+        _unsafe.RegisterAllWithAttribute<CommandExecution>(null);
     }
 
     [ShellCommand("set")]

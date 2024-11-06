@@ -4,7 +4,7 @@ namespace RefinedShell.Tests;
 
 [TestFixture]
 [TestOf(typeof(ExecutionResult))]
-internal sealed class ExecutionResultTest
+internal sealed class ExecutionResultEquality
 {
     [Test]
     public void Equals_ReturnValueIsNull()

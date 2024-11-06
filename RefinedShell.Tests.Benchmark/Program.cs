@@ -3,4 +3,4 @@
 using BenchmarkDotNet.Running;
 using RefinedShell.Tests.Benchmark;
 
-BenchmarkRunner.Run<ShellMethods>();
+BenchmarkRunner.Run<Getter_Property_Field>();

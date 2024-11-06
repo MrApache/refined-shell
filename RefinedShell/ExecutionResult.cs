@@ -96,8 +96,6 @@ namespace RefinedShell
             return Equals(left, right);
         }
 
-
-
         /// <summary>
         /// Gets the hash code of this <see cref="ExecutionResult"/>.
         /// </summary>

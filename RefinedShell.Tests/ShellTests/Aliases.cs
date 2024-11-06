@@ -12,7 +12,7 @@ internal sealed class Aliases
     public Aliases()
     {
         _shell = new Shell();
-        _shell.RegisterAll<Aliases>(null);
+        _shell.RegisterAllWithAttribute<Aliases>(null);
         _shell.CreateAlias("phw","print hello_world");
         _shell.CreateAlias("gv","getValue");
     }

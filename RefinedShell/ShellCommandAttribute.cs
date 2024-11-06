@@ -1,13 +1,14 @@
 using System;
 using JetBrains.Annotations;
 
+//Fix naming
 namespace RefinedShell
 {
     /// <summary>
     /// An attribute that marks a method as a shell command.
     /// </summary>
     [MeansImplicitUse]
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
     public sealed class ShellCommandAttribute : Attribute
     {
         /// <summary>
