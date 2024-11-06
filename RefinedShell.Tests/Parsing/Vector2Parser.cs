@@ -8,7 +8,8 @@ namespace RefinedShell.Tests.Parsing;
 internal sealed class Vector2Parser : ITypeParser
 {
     private readonly NumberFormatInfo _format;
-    public uint OptionsCount => 2;
+    public uint ArgumentCount => 2;
+    public uint OptionalCount => 0;
 
     public Vector2Parser()
     {

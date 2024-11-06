@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Reflection;
 using RefinedShell.Commands;
 using RefinedShell.Execution;
 using RefinedShell.Parsing;
@@ -45,8 +43,23 @@ namespace RefinedShell.Interpreter
             }
 
             Node[] actualArguments = commandNode.Arguments;
-            int expectedArguments = command.Arguments.Sum(parameter => (int)TypeParsers.GetParser(parameter.ParameterType).OptionsCount);
-            if(actualArguments.Length < expectedArguments)
+
+            int minimalCount = 0;
+            int maximumCount = 0;
+            int firstOptional = -1;
+
+            for (int i = 0; i < command.Arguments.Count; i++)
+            {
+                Argument argument = command.Arguments[i];
+                if (argument.IsOptional && firstOptional == -1)
+                    firstOptional = i;
+                ITypeParser parser = TypeParsers.GetParser(argument.Type);
+                if(!argument.IsOptional)
+                    minimalCount += (int)parser.ArgumentCount;
+                maximumCount += (int)(parser.ArgumentCount + parser.OptionalCount);
+            }
+
+            if(actualArguments.Length < minimalCount)
             {
                 if(actualArguments.Length == 0)
                 {
@@ -58,7 +71,26 @@ namespace RefinedShell.Interpreter
                 return new ProblemSegment(start, length, ExecutionError.InsufficientArguments);
             }
 
-            if(actualArguments.Length > expectedArguments)
+            if(actualArguments.Length > minimalCount && actualArguments.Length < maximumCount)
+            {
+                int current = actualArguments.Length - minimalCount;
+                int temp = 0;
+
+                for (int i = firstOptional; i < command.Arguments.Count; i++)
+                {
+                    Argument argument = command.Arguments[i];
+                    ITypeParser parser = TypeParsers.GetParser(argument.Type);
+                    temp += (int)parser.OptionalCount;
+                    if (temp == current) {
+                        break;
+                    }
+                    if(temp > current) {
+                        (int start, int length) = GetArgumentSlice(actualArguments);
+                        return new ProblemSegment(start, length, ExecutionError.InsufficientArguments);
+                    }
+                }
+            }
+            else if(actualArguments.Length > maximumCount)
             {
                 (int start, int length) = GetArgumentSlice(actualArguments);
                 return new ProblemSegment(start, length, ExecutionError.TooManyArguments);
@@ -71,12 +103,17 @@ namespace RefinedShell.Interpreter
         {
             int start = 0;
 
-            for (int i = 0; i < command.Arguments.Length; i++)
+            for (int i = 0; i < command.Arguments.Count; i++)
             {
-                ParameterInfo parameter = command.Arguments[i];
-                ITypeParser parser = TypeParsers.GetParser(parameter.ParameterType);
+                Argument argument = command.Arguments[i];
+                ITypeParser parser = TypeParsers.GetParser(argument.Type);
+                if (argument.IsOptional)
+                {
+                    if(i + parser.ArgumentCount >= command.Arguments.Count)
+                        break;
+                }
 
-                int length = (int)parser.OptionsCount;
+                int length = (int)parser.ArgumentCount;
                 ReadOnlySpan<Node> argumentSlice = arguments.AsSpan(start, length);
                 ProblemSegment error = ValidateArgument(parser, argumentSlice);
                 if (error != ProblemSegment.None)
@@ -87,7 +124,7 @@ namespace RefinedShell.Interpreter
 
             return ProblemSegment.None;
         }
-        
+
         private ProblemSegment ValidateArgument(ITypeParser parser, ReadOnlySpan<Node> arguments)
         {
             if (arguments.Length == 1 && arguments[0] is ArgumentNode an)
@@ -166,9 +203,7 @@ namespace RefinedShell.Interpreter
             Token endToken = GetTokenFromArgumentNode(arguments[^1]);
             int end = endToken.Start + endToken.Length;
 
-            int length = end - start;
-
-            return new ValueTuple<int, int>(start, length);
+            return new ValueTuple<int, int>(start, end - start);
         }
         
         private static bool ContainsCommandNode(ReadOnlySpan<Node> nodes)
@@ -180,6 +215,18 @@ namespace RefinedShell.Interpreter
             }
 
             return false;
+        }
+        
+        private static int GetTotalArgumentsCountForArgumentType(Argument argument)
+        {
+            ITypeParser parser = TypeParsers.GetParser(argument.Type);
+            return (int)(parser.ArgumentCount + parser.OptionalCount);
+        }
+
+        private static int GetMinimalArgumentCount(Argument argument)
+        {
+            ITypeParser parser = TypeParsers.GetParser(argument.Type);
+            return (int)parser.ArgumentCount;
         }
     }
 }

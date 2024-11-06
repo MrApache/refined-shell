@@ -148,7 +148,8 @@ internal sealed class Registration
     
     private sealed class CustomTypeParser : ITypeParser
     {
-        public uint OptionsCount => 0;
+        public uint ArgumentCount => 0;
+        public uint OptionalCount => 0;
 
         public bool CanParse(ReadOnlySpan<string?> input) => true;
 

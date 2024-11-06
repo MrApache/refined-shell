@@ -8,9 +8,14 @@ namespace RefinedShell.Parsing
     public interface ITypeParser
     {
         /// <summary>
-        /// Gets the number of options available for parsing.
+        /// Gets the number of arguments available for parsing.
         /// </summary>
-        public uint OptionsCount { get; }
+        public uint ArgumentCount { get; }
+
+        /// <summary>
+        /// Gets the number of optional arguments available for parsing.
+        /// </summary>
+        public uint OptionalCount { get; }
         
         /// <summary>
         /// Determines whether the parser can parse the specified input.

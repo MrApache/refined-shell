@@ -4,7 +4,9 @@ namespace RefinedShell.Parsing
 {
     internal sealed class IntParser : ITypeParser
     {
-        public uint OptionsCount => 1;
+        public uint ArgumentCount => 1;
+        public uint OptionalCount => 0;
+
         public bool CanParse(ReadOnlySpan<string?> input)
         {
             return int.TryParse(input[0], out int _);

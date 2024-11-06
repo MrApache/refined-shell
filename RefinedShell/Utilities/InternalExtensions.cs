@@ -3,11 +3,24 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using RefinedShell.Commands;
 
 namespace RefinedShell.Utilities
 {
     internal static class InternalExtensions
     {
+        internal static Argument[] ToArguments(this ParameterInfo[] parameters)
+        {
+            Argument[] arguments = new Argument[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                ParameterInfo parameter = parameters[i];
+                arguments[i] = new Argument(parameter);
+            }
+
+            return arguments;
+        }
+
         internal static bool IsStatic(this PropertyInfo property)
         {
             return property.GetMethod != null && property.GetMethod.IsStatic

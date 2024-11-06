@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 
 namespace RefinedShell.Commands
 {
@@ -16,7 +15,7 @@ namespace RefinedShell.Commands
         /// <summary>
         /// Array of parameter information necessary for executing the command.
         /// </summary>
-        public ParameterInfo[] Arguments { get; }
+        public Arguments Arguments { get; }
 
         /// <summary>
         /// Indicates whether the command produces a return value upon execution.

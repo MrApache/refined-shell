@@ -8,12 +8,12 @@ namespace RefinedShell.Commands
     internal sealed class DelegateCommand : ICommand
     {
         public string Name => _name;
-        public ParameterInfo[] Arguments => _arguments;
+        public Arguments Arguments => _arguments;
         public bool ReturnsResult => _returnsResult;
 
         private readonly string _name;
         private readonly bool _returnsResult;
-        private readonly ParameterInfo[] _arguments;
+        private readonly Arguments _arguments;
 
         private readonly MethodInfo _method;
         private readonly WeakReference? _target;
@@ -23,7 +23,7 @@ namespace RefinedShell.Commands
         internal DelegateCommand(StringToken name, MethodInfo method, object? target)
         {
             _name = name.ToString();
-            _arguments = method.GetParameters();
+            _arguments = new Arguments(method.GetParameters().ToArguments());
             _method = method;
             if(!_method.IsStatic) {
                 _target = new WeakReference(target);

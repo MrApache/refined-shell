@@ -66,7 +66,7 @@ namespace RefinedShell.Interpreter
                     Token nextToken = FindNextToken();
                     if (nextToken.Type == TokenType.Unknown)
                     {
-                        goto Start;
+                        goto Start; //Oh no
                     }
 
                     _position = nextToken.Start;

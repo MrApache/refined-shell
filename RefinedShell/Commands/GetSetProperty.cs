@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using RefinedShell.Execution;
 using RefinedShell.Utilities;
@@ -21,7 +22,7 @@ namespace RefinedShell.Commands
                 return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
             }
 
-            if(args.Length != 0)
+            if(args.Length != 0 && args[0] != Type.Missing)
             {
                 ExecutionResult setResult = Set(args);
                 if(!setResult.Success) {

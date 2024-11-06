@@ -6,6 +6,20 @@ internal sealed class CommandCollection
 {
     private readonly Shell _shell;
 
+    [ShellCommand("health")]
+    public static float Health { get; set; }
+
+    [ShellCommand("speed")]
+    public static float Speed => _damage;
+
+    [ShellCommand("damage")]
+    public static float Damage
+    {
+        set => _damage = value;
+    }
+
+    private static float _damage;
+
     public CommandCollection(Shell shell)
     {
         _shell = shell;
@@ -75,5 +89,11 @@ internal sealed class CommandCollection
     private string? GetNullString()
     {
         return null;
+    }
+
+    [ShellCommand("attrb")]
+    private string GetAttrb(string name, int value = 0)
+    {
+        return $"{name}: {value}";
     }
 }

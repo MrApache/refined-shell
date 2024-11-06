@@ -6,7 +6,8 @@ namespace RefinedShell.Parsing
     internal sealed class DoubleParser : ITypeParser
     {
         private readonly NumberFormatInfo _format;
-        public uint OptionsCount => 1;
+        public uint ArgumentCount => 1;
+        public uint OptionalCount => 0;
 
         public DoubleParser()
         {

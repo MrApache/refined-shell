@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using RefinedShell.Commands;
 using RefinedShell.Interpreter;
 using RefinedShell.Parsing;
@@ -47,15 +46,23 @@ namespace RefinedShell.Execution
 
         private IArgument[] ParseArguments(ICommand command, Node[] argumentNodes)
         {
-            IArgument[] compiledArguments = new IArgument[command.Arguments.Length];
+            IArgument[] compiledArguments = new IArgument[command.Arguments.Count];
             int start = 0;
 
-            for (int i = 0; i < command.Arguments.Length; i++)
+            for (int i = 0; i < command.Arguments.Count; i++)
             {
-                ParameterInfo parameter = command.Arguments[i];
-                ITypeParser parser = TypeParsers.GetParser(parameter.ParameterType);
+                Argument argument = command.Arguments[i];
+                ITypeParser parser = TypeParsers.GetParser(argument.Type);
+                if (argument.IsOptional)
+                {
+                    if(i >= argumentNodes.Length)
+                    {
+                        compiledArguments[i] = new ParsedArgument(Type.Missing);
+                        continue;
+                    }
+                }
 
-                int length = (int)parser.OptionsCount;
+                int length = (int)parser.ArgumentCount;
                 ReadOnlySpan<Node> argumentSlice = argumentNodes.AsSpan(start, length);
                 compiledArguments[i] = ParseArgument(parser, argumentSlice);
                 start += length;

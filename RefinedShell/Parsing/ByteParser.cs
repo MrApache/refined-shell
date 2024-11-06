@@ -4,7 +4,8 @@ namespace RefinedShell.Parsing
 {
     internal sealed class ByteParser : ITypeParser
     {
-        public uint OptionsCount => 1;
+        public uint ArgumentCount => 1;
+        public uint OptionalCount => 0;
 
         public bool CanParse(ReadOnlySpan<string?> input)
         {
