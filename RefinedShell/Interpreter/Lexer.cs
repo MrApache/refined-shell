@@ -52,20 +52,17 @@ namespace RefinedShell.Interpreter
 
         private Token FindNextToken()
         {
-            while(_position < _input.Length)
-            {
+            while(_position < _input.Length) {
                 Token token = GoNext();
                 if(token.Type == TokenType.Whitespace)
                     continue;
 
-                if(token.Type == TokenType.Unknown)
-                {
+                if(token.Type == TokenType.Unknown) {
                     int start = _position;
                     Start:
                     _position++;
                     Token nextToken = FindNextToken();
-                    if (nextToken.Type == TokenType.Unknown)
-                    {
+                    if (nextToken.Type == TokenType.Unknown) {
                         goto Start; //Oh no
                     }
 
@@ -82,11 +79,9 @@ namespace RefinedShell.Interpreter
         private Token GoNext()
         {
             string slice = _input.Substring(_position, _input.Length - _position);
-            foreach ((TokenType tokenType, string pattern) in _tokenDefinitions)
-            {
+            foreach ((TokenType tokenType, string pattern) in _tokenDefinitions) {
                 Match match = Regex.Match(slice, pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                if(match.Success)
-                {
+                if(match.Success) {
                     Token token = new Token(_position, match.Length, tokenType);
                     _position += match.Length;
                     return token;

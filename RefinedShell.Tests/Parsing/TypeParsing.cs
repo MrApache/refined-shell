@@ -12,7 +12,7 @@ internal abstract class TypeParsing<T>
     [SetUp]
     public void Setup()
     {
-        _parser = TypeParsers.GetParser(typeof(T));
+        _parser = ParserLibrary.Default.GetParser(typeof(T));
     }
 
     [Test]

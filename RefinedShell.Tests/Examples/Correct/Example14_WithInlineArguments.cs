@@ -3,11 +3,11 @@ using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests.Examples.Correct;
 
-internal sealed class Example14 : IExample
+internal sealed class Example14_WithInlineArguments : StaticCommandsExample
 {
-    public string Input => "command $(getpos $(get_player this)) $ ( getplayerpos )";
+    public override string Input => "command $(getpos $(get_player this)) $ ( getplayerpos )";
 
-    public Expression Expression =>
+    public override Expression Expression =>
         new Expression(
             new CommandNode(new Token(0, 7, TokenType.Identifier),
                 "command",
@@ -26,9 +26,7 @@ internal sealed class Example14 : IExample
                 ])
         );
 
-    public InterpreterException? Exception => null;
-
-    public List<(string, TokenType)> Tokens =>
+    public override List<(string, TokenType)> Tokens =>
     [
         ("command", TokenType.Identifier),
         ("$", TokenType.Dollar),
@@ -46,28 +44,10 @@ internal sealed class Example14 : IExample
         (")", TokenType.CloseParenthesis)
     ];
 
-    public ExecutionResult ExecutionResult => new ExecutionResult(true, null, ProblemSegment.None);
+    public override ExecutionResult ExecutionResult => ExecutionResult.Success();
 
-    public void RegisterCommands(Shell shell)
-    {
-        shell.RegisterAllWithAttribute(this);
-    }
-
-    public void UnregisterCommands(Shell shell)
-    {
-        shell.UnregisterAllWithAttribute(this);
-    }
-
-    [ShellCommand("command")]
-    private static void DoAction(float position, float playerPosition) { }
-
-    [ShellCommand("getpos")]
-    private static float GetPos(bool playerFound) => 123123;
-
-    [ShellCommand("get_player")]
-    private static bool GetPlayer(string name) => true;
-
-    [ShellCommand("getplayerpos")]
-    private static float GetPlayerPos() => 2343243;
-
+    [ShellCommand("command")] private static void DoAction(float position, float playerPosition) { }
+    [ShellCommand("getpos")] private static float GetPos(bool playerFound) => 123123;
+    [ShellCommand("get_player")] private static bool GetPlayer(string name) => true;
+    [ShellCommand("getplayerpos")] private static float GetPlayerPos() => 2343243;
 }

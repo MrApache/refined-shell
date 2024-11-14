@@ -6,30 +6,32 @@ using RefinedShell.Parsing;
 namespace RefinedShell.Tests.Parsing;
 
 [TestFixture]
-[TestOf(typeof(TypeParsers))]
+[TestOf(typeof(ParserLibrary))]
 internal sealed class AddCustomParser
 {
+    private static readonly ParserLibrary _parserLibrary = ParserLibrary.Default;
+
     [Test]
     public void Add()
     {
-        Assert.That(TypeParsers.Contains(typeof(Vector2)), Is.False);
-        TypeParsers.AddParser<Vector2>(new Vector2Parser());
-        Assert.That(TypeParsers.Contains(typeof(Vector2)), Is.True);
-        TypeParsers.Remove<Vector2>();
+        Assert.That(_parserLibrary.Contains(typeof(Vector2)), Is.False);
+        _parserLibrary.AddParser<Vector2>(new Vector2Parser());
+        Assert.That(_parserLibrary.Contains(typeof(Vector2)), Is.True);
+        _parserLibrary.Remove<Vector2>();
     }
 
     [Test]
     public void AddAlreadyRegistered_Exception()
     {
-        TypeParsers.AddParser<Vector2>(new Vector2Parser());
-        Assert.That(TypeParsers.Contains(typeof(Vector2)), Is.True);
-        Assert.Throws<ArgumentException>(() => TypeParsers.AddParser<Vector2>(new Vector2Parser()));
-        TypeParsers.Remove<Vector2>();
+        _parserLibrary.AddParser<Vector2>(new Vector2Parser());
+        Assert.That(_parserLibrary.Contains(typeof(Vector2)), Is.True);
+        Assert.Throws<ArgumentException>(() => _parserLibrary.AddParser<Vector2>(new Vector2Parser()));
+        _parserLibrary.Remove<Vector2>();
     }
 
     [Test]
     public void AddNull_Exception()
     {
-        Assert.Throws<ArgumentNullException>(() => TypeParsers.AddParser<Vector2>(null!));
+        Assert.Throws<ArgumentNullException>(() => _parserLibrary.AddParser<Vector2>(null!));
     }
 }

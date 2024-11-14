@@ -4,11 +4,11 @@ using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests.Examples.Correct;
 
-internal sealed class Example5 : IExample
+internal sealed class Example5_Sequence_Inline : StaticCommandsExample
 {
-    public string Input => "move $(wrongformat); teleport here";
+    public override string Input => "move $(wrongformat); teleport here";
 
-    public Expression Expression =>
+    public override Expression Expression =>
         new Expression(
             new CommandNode(new Token(0, 4, TokenType.Identifier), "move",
             [
@@ -19,9 +19,8 @@ internal sealed class Example5 : IExample
                 new ArgumentNode(new Token(30, 4, TokenType.Identifier), "here")
             ])
         );
-    public InterpreterException? Exception => null;
 
-    public List<(string, TokenType)> Tokens =>
+    public override List<(string, TokenType)> Tokens =>
     [
         ("move", TokenType.Identifier),
         ("$", TokenType.Dollar),
@@ -33,21 +32,11 @@ internal sealed class Example5 : IExample
         ("here", TokenType.Identifier)
     ];
 
-    public ExecutionResult ExecutionResult => new ExecutionResult(true, new[]
+    public override ExecutionResult ExecutionResult => ExecutionResult.Success(new []
     {
         new ExecutionResult(true, 993, ProblemSegment.None),
         new ExecutionResult(true, true, ProblemSegment.None)
-    }, ProblemSegment.None);
-
-    public void RegisterCommands(Shell shell)
-    {
-        shell.RegisterAllWithAttribute(this);
-    }
-
-    public void UnregisterCommands(Shell shell)
-    {
-        shell.UnregisterAllWithAttribute(this);
-    }
+    });
 
     [ShellCommand("move")]
     private static int Move(int position) => 993;

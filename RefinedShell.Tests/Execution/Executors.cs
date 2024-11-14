@@ -33,7 +33,7 @@ internal sealed class Executors
     [Test]
     public void Execute_Unsafe()
     {
-        bool result = _unsafe.Execute("getPlayer false").Success;
+        bool result = _unsafe.Execute("getPlayer false").IsSuccess;
         Assert.That(result, Is.True);
     }
 
@@ -53,7 +53,7 @@ internal sealed class Executors
     public void Execute_Safe_Exception()
     {
         ExecutionResult result = _safe.Execute("getPlayer true");
-        Assert.That(result.Success, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.ReturnValue, Is.TypeOf<ArgumentException>());
     }
 }

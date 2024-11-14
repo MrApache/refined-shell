@@ -35,14 +35,14 @@ internal sealed class Aliases
     [Test]
     public void Execute_Success()
     {
-        bool result = _shell.Execute("phw").Success;
+        bool result = _shell.Execute("phw").IsSuccess;
         Assert.That(result, Is.True);
     }
 
     [Test]
     public void Execute_Fail()
     {
-        bool result = _shell.Execute("pwd").Success;
+        bool result = _shell.Execute("pwd").IsSuccess;
         Assert.That(result, Is.False);
     }
 
@@ -50,7 +50,7 @@ internal sealed class Aliases
     public void Execute_Redefine()
     {
         _shell.CreateAlias("phw", "print_err file_not_found");
-        bool result = _shell.Execute("phw").Success;
+        bool result = _shell.Execute("phw").IsSuccess;
         Assert.That(result, Is.True);
         _shell.CreateAlias("phw","print hello_world");
     }
@@ -67,17 +67,17 @@ internal sealed class Aliases
     public void Execute_AliasIsEmpty()
     {
         _shell.CreateAlias("", "getValue");
-        bool result = _shell.Execute("").Success;
+        bool result = _shell.Execute("").IsSuccess;
         Assert.That(result, Is.False);
     }
 
     [Test]
     public void DeleteAlias()
     {
-        bool result = _shell.Execute("phw").Success;
+        bool result = _shell.Execute("phw").IsSuccess;
         Assert.That(result, Is.True);
         _shell.DeleteAlias("phw");
-        result = _shell.Execute("phw").Success;
+        result = _shell.Execute("phw").IsSuccess;
         Assert.That(result, Is.False);
     }
 }

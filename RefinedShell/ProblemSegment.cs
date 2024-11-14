@@ -44,7 +44,9 @@ namespace RefinedShell
         /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
         public bool Equals(ProblemSegment other)
         {
-            return Start == other.Start && Length == other.Length && Error == other.Error;
+            return Start == other.Start
+                   && Length == other.Length
+                   && Error == other.Error;
         }
 
         /// <summary>
@@ -82,6 +84,10 @@ namespace RefinedShell
         /// </remarks>
         /// <returns>A <see cref="ProblemSegment"/> instance representing no problem.</returns>
         public static ProblemSegment None => new ProblemSegment(0, 0, ExecutionError.None);
+
+        public static ProblemSegment Empty => new ProblemSegment(0, 0, ExecutionError.EmptyInput);
+
+        public static ProblemSegment CommandNotValid => new ProblemSegment(0, 0, ExecutionError.CommandNotValid);
 
         /// <summary>
         /// Compares whether two <see cref="ProblemSegment"/> instances are equal.

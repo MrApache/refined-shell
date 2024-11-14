@@ -20,9 +20,9 @@ namespace RefinedShell
             set => _commands[name] = value;
         }
 
-        public CommandCollection()
+        public CommandCollection(int capacity = 32)
         {
-            _commands = new Dictionary<StringToken, ICommand>(32);
+            _commands = new Dictionary<StringToken, ICommand>(capacity);
         }
 
         public void Add(ICommand item)

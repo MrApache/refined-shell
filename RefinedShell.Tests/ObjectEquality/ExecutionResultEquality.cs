@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using RefinedShell.Tests.Examples.Correct;
 
 namespace RefinedShell.Tests;
 
@@ -36,5 +37,13 @@ internal sealed class ExecutionResultEquality
         ExecutionResult a = new ExecutionResult(true, null, ProblemSegment.None);
         ExecutionResult b = new ExecutionResult(true, null, ProblemSegment.None);
         Assert.That(a.GetHashCode() == b.GetHashCode(), Is.True);
+    }
+
+    [Test]
+    public void Equals_ValueType()
+    {
+        ExecutionResult a = new ExecutionResult(true, 10000, ProblemSegment.None);
+        ExecutionResult b = new ExecutionResult(true, 10000, ProblemSegment.None);
+        Assert.That(a == b, Is.True);
     }
 }

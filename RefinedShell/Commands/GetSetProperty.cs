@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using RefinedShell.Execution;
 using RefinedShell.Utilities;
 
 namespace RefinedShell.Commands
@@ -19,30 +18,15 @@ namespace RefinedShell.Commands
         public override ExecutionResult Execute(object?[] args)
         {
             if (!IsValid()) {
-                return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
+                return ExecutionResult.Error(ProblemSegment.CommandNotValid);
             }
 
-            if(args.Length != 0 && args[0] != Type.Missing)
-            {
-                ExecutionResult setResult = Set(args);
-                if(!setResult.Success) {
-                    return setResult;
-                }
+            if(args.Length != 0 && args[0] != Type.Missing) {
+                _set.Invoke(GetTarget(), args);
             }
 
-            return Get();
-        }
-
-        private ExecutionResult Get()
-        {
             object? returnValue = _get.Invoke(GetTarget(), null);
-            return new ExecutionResult(true, 0, 0, ExecutionError.None, returnValue);
-        }
-
-        private ExecutionResult Set(object?[] args)
-        {
-            _set.Invoke(GetTarget(), args);
-            return new ExecutionResult(true, 0, 0, ExecutionError.None, null);
+            return ExecutionResult.Success(returnValue);
         }
     }
 }

@@ -9,11 +9,21 @@ namespace RefinedShell.Utilities
 {
     internal static class InternalExtensions
     {
+        internal static bool IsStatic(this MemberInfo member)
+        {
+            return member switch
+            {
+                FieldInfo field => field.IsStatic,
+                MethodInfo method => method.IsStatic,
+                PropertyInfo property => property.IsStaticProperty(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+        
         internal static Argument[] ToArguments(this ParameterInfo[] parameters)
         {
             Argument[] arguments = new Argument[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-            {
+            for (int i = 0; i < parameters.Length; i++) {
                 ParameterInfo parameter = parameters[i];
                 arguments[i] = new Argument(parameter);
             }
@@ -21,7 +31,7 @@ namespace RefinedShell.Utilities
             return arguments;
         }
 
-        internal static bool IsStatic(this PropertyInfo property)
+        private static bool IsStaticProperty(this PropertyInfo property)
         {
             return property.GetMethod != null && property.GetMethod.IsStatic
                    || property.SetMethod != null && property.SetMethod.IsStatic;
@@ -48,10 +58,8 @@ namespace RefinedShell.Utilities
             try
             {
 
-                while (e1.MoveNext())
-                {
-                    if (!(e2.MoveNext() && Equals(e1.Current, e2.Current)))
-                    {
+                while (e1.MoveNext()) {
+                    if (!(e2.MoveNext() && Equals(e1.Current, e2.Current))) {
                         return false;
                     }
                 }

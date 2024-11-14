@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace RefinedShell.Parsing
@@ -6,8 +7,11 @@ namespace RefinedShell.Parsing
     internal sealed class FloatParser : ITypeParser
     {
         private readonly NumberFormatInfo _format;
-        public uint ArgumentCount => 1;
-        public uint OptionalCount => 0;
+
+        public IEnumerator<ArgumentInfo> GetArgumentInfo()
+        {
+            yield return new ArgumentInfo(1, false);
+        }
 
         public FloatParser()
         {

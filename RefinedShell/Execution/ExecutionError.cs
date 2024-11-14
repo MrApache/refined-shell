@@ -49,6 +49,8 @@ namespace RefinedShell.Execution
         /// Indicates that the command does not return a result when one is expected.
         /// </summary>
         CommandHasNoReturnResult,
+
+        EmptyInput,
         CommandNotValid,
         ArgumentError,
         Exception

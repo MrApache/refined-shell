@@ -28,8 +28,7 @@ namespace RefinedShell.Interpreter
         {
             Token current = _currentToken;
             TokenType result = current.Type & types;
-            if(result == current.Type && result != 0)
-            {
+            if(result == current.Type && result != 0) {
                 GetNextToken();
                 return current;
             }
@@ -42,8 +41,7 @@ namespace RefinedShell.Interpreter
             Expression expression = new Expression();
             _lexer.SetInputString(input.ToString());
             GetNextToken();
-            while(true)
-            {
+            while(true) {
                 CommandNode commandNode;
                 Token token = _currentToken;
                 switch (token.Type)

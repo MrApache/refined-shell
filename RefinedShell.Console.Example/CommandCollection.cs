@@ -6,8 +6,8 @@ internal sealed class CommandCollection
 {
     private readonly Shell _shell;
 
-    [ShellCommand("health")]
-    public static float Health { get; set; }
+    [ShellCommand("Health")]
+    public static int Health { get; set; }
 
     [ShellCommand("speed")]
     public static float Speed => _damage;

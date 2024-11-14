@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using RefinedShell.Execution;
 using RefinedShell.Utilities;
 
@@ -14,7 +15,7 @@ namespace RefinedShell
         /// <summary>
         /// Gets value indicating whether the execution was successful.
         /// </summary>
-        public readonly bool Success;
+        public readonly bool IsSuccess;
 
         /// <summary>
         /// Gets the segment of the input string associated with any problems encountered during execution.
@@ -24,7 +25,7 @@ namespace RefinedShell
         /// <summary>
         /// Gets the execution error associated with the segment.
         /// </summary>
-        public ExecutionError Error => Segment.Error;
+        public ExecutionError ErrorType => Segment.Error;
 
         /// <summary>
         /// Gets value returned by the execution, if any.
@@ -39,9 +40,9 @@ namespace RefinedShell
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionResult"/> struct.
         /// </summary>
-        public ExecutionResult(bool success, int start, int length, ExecutionError error, object? returnValue)
+        public ExecutionResult(bool isSuccess, int start, int length, ExecutionError error, object? returnValue)
         {
-            Success = success;
+            IsSuccess = isSuccess;
             Segment = new ProblemSegment(start, length, error);
             ReturnValue = returnValue;
         }
@@ -49,9 +50,9 @@ namespace RefinedShell
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecutionResult"/> struct.
         /// </summary>
-        public ExecutionResult(bool success, object? returnValue, ProblemSegment segment)
+        public ExecutionResult(bool isSuccess, object? returnValue, ProblemSegment segment)
         {
-            Success = success;
+            IsSuccess = isSuccess;
             ReturnValue = returnValue;
             Segment = segment;
         }
@@ -73,18 +74,17 @@ namespace RefinedShell
         /// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
         public bool Equals(ExecutionResult other)
         {
-            return Success == other.Success
+            return IsSuccess == other.IsSuccess
                 && Segment == other.Segment
-                && Error == other.Error
+                && ErrorType == other.ErrorType
                 && CheckReturnValueEquality(ReturnValue, other.ReturnValue);
         }
 
         private static bool CheckReturnValueEquality(object? left, object? right)
         {
-            if (left == right)
-            {
+            if (left == null && right == null)
                 return true;
-            }
+
             if (left == null || right == null)
             {
                 return false;
@@ -93,7 +93,7 @@ namespace RefinedShell
             if (left is ICollection leftCollection && right is ICollection rightCollection)
                 return leftCollection.SequenceEqual(rightCollection);
 
-            return Equals(left, right);
+            return left.Equals(right);
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace RefinedShell
         /// <returns>Hash code of this <see cref="ExecutionResult"/>.</returns>
         public override int GetHashCode()
         {
-            return HashCode.Combine(Success, Segment, ReturnValue);
+            return HashCode.Combine(IsSuccess, Segment, ReturnValue);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace RefinedShell
         /// <returns><see cref="String"/> representation of this <see cref="ExecutionResult"/>.</returns>
         public override string ToString()
         {
-            return $"Success: {Success}, Return: {ReturnValue}";
+            return $"Success: {IsSuccess}, Return: {ReturnValue}, Error: {ErrorType}, Segment: {Segment.Start}:{Segment.Length}";
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace RefinedShell
         /// <param name="returnValue">The value returned by the operation. May be null.</param>
         public void Deconstruct(out bool success, out ProblemSegment segment, out object? returnValue)
         {
-            success = Success;
+            success = IsSuccess;
             segment = Segment;
             returnValue = ReturnValue;
         }
@@ -149,5 +149,14 @@ namespace RefinedShell
         {
             return !a.Equals(b);
         }
+
+        internal static ExecutionResult Empty => new ExecutionResult(false, null, ProblemSegment.Empty);
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ExecutionResult Error(ProblemSegment segment) => new ExecutionResult(false, null, segment);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ExecutionResult Success(object? value = null) => new ExecutionResult(true, value, ProblemSegment.None);
     }
 }

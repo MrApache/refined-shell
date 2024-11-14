@@ -25,7 +25,7 @@ namespace RefinedShell.Execution
                 if(command.Command.ReturnsResult)
                 {
                     _resultPool[poolPtr++] = result;
-                    success &= result.Success;
+                    success &= result.IsSuccess;
                 }
             }
 

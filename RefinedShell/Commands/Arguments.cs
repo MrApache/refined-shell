@@ -6,15 +6,12 @@ namespace RefinedShell.Commands
 {
     public sealed class Arguments : IReadOnlyList<Argument>
     {
-        internal readonly int MinArgumentsCount;
-        internal readonly int MaxArgumentCount;
-
         private readonly Argument[] _arguments;
 
         public Argument this[int index] => _arguments[index];
         public int Count => _arguments.Length;
 
-        public Arguments(Argument[] arguments)
+        public Arguments(params Argument[] arguments)
         {
             _arguments = arguments;
         }

@@ -1,60 +1,32 @@
-using System;
 using System.Reflection;
-using RefinedShell.Execution;
 using RefinedShell.Utilities;
 
 namespace RefinedShell.Commands
 {
-    internal sealed class DelegateCommand : ICommand
+    internal sealed class DelegateCommand : MemberCommand
     {
-        public string Name => _name;
-        public Arguments Arguments => _arguments;
-        public bool ReturnsResult => _returnsResult;
+        public override Arguments Arguments => _arguments;
+        public override bool ReturnsResult => _returnsResult;
 
-        private readonly string _name;
         private readonly bool _returnsResult;
         private readonly Arguments _arguments;
-
         private readonly MethodInfo _method;
-        private readonly WeakReference? _target;
 
-        private bool _disposed;
-
-        internal DelegateCommand(StringToken name, MethodInfo method, object? target)
+        public DelegateCommand(StringToken name, MethodInfo method, object? target)
+            : base(name, method, target)
         {
-            _name = name.ToString();
             _arguments = new Arguments(method.GetParameters().ToArguments());
+            _returnsResult = method.ReturnType != typeof(void);
             _method = method;
-            if(!_method.IsStatic) {
-                _target = new WeakReference(target);
-            }
-            _returnsResult = _method.ReturnType != typeof(void);
         }
 
-        public ExecutionResult Execute(object?[] args)
+        public override ExecutionResult Execute(object?[] args)
         {
             if (!IsValid()) {
-                return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
+                return ExecutionResult.Error(ProblemSegment.CommandNotValid);
             }
             object? returnValue = _method.Invoke(GetTarget(), args);
-            return new ExecutionResult(true, 0, 0, ExecutionError.None, returnValue);
-        }
-
-        private object? GetTarget()
-        {
-            return _method.IsStatic ? null : _target!.Target;
-        }
-
-        public bool IsValid()
-        {
-            return !_disposed && ((_target != null && _target.IsAlive) || _method.IsStatic);
-        }
-
-        public void Dispose()
-        {
-            if(_target != null)
-                _target.Target = null;
-            _disposed = true;
+            return ExecutionResult.Success(returnValue);
         }
     }
 }

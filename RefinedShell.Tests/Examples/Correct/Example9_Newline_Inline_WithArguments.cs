@@ -3,11 +3,11 @@ using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests.Examples.Correct;
 
-internal sealed class Example9 : IExample
+internal sealed class Example9_Newline_Inline_WithArguments : StaticCommandsExample
 {
-    public string Input => "$(command arg1 arg2)";
+    public override string Input => "$(command arg1 arg2)";
 
-    public Expression Expression =>
+    public override Expression Expression =>
         new Expression(
             new CommandNode(new Token(2, 7, TokenType.Identifier), "command",
             [
@@ -15,9 +15,7 @@ internal sealed class Example9 : IExample
                 new ArgumentNode(new Token(13, 4, TokenType.Identifier), "arg2")
             ], true));
 
-    public InterpreterException? Exception => null;
-
-    public List<(string, TokenType)> Tokens =>
+    public override List<(string, TokenType)> Tokens =>
     [
         ("$", TokenType.Dollar),
         ("(", TokenType.OpenParenthesis),
@@ -27,17 +25,7 @@ internal sealed class Example9 : IExample
         (")", TokenType.CloseParenthesis)
     ];
 
-    public ExecutionResult ExecutionResult => new ExecutionResult(true, "arg1arg2", ProblemSegment.None);
-
-    public void RegisterCommands(Shell shell)
-    {
-        shell.RegisterAllWithAttribute(this);
-    }
-
-    public void UnregisterCommands(Shell shell)
-    {
-        shell.UnregisterAllWithAttribute(this);
-    }
+    public override ExecutionResult ExecutionResult => ExecutionResult.Success("arg1arg2");
 
     [ShellCommand("command")]
     private static string FormatString(string arg1, string arg2)

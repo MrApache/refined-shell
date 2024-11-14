@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 
 namespace RefinedShell.Parsing
 {
     internal sealed class UShortParser : ITypeParser
     {
-        public uint ArgumentCount => 1;
-        public uint OptionalCount => 0;
+        public IEnumerator<ArgumentInfo> GetArgumentInfo()
+        {
+            yield return new ArgumentInfo(1, false);
+        }
+
         public bool CanParse(ReadOnlySpan<string?> input)
         {
             return ushort.TryParse(input[0], out ushort _);

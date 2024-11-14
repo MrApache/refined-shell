@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using RefinedShell.Parsing;
 
@@ -104,9 +106,9 @@ internal sealed class Registration
     [Test]
     public void RegisterWithCustomTypeWithParser()
     {
-        TypeParsers.AddParser<CustomType>(new CustomTypeParser());
+        ParserLibrary.Default.AddParser<CustomType>(new CustomTypeParser());
         _shell.Register(MethodsWithAttributes.Command5, "command5");
-        TypeParsers.Remove<CustomType>();
+        ParserLibrary.Default.Remove<CustomType>();
         _shell.UnregisterAll();
     }
 
@@ -148,11 +150,8 @@ internal sealed class Registration
     
     private sealed class CustomTypeParser : ITypeParser
     {
-        public uint ArgumentCount => 0;
-        public uint OptionalCount => 0;
-
+        public IEnumerator<ArgumentInfo> GetArgumentInfo() => Enumerable.Empty<ArgumentInfo>().GetEnumerator();
         public bool CanParse(ReadOnlySpan<string?> input) => true;
-
         public object Parse(ReadOnlySpan<string?> input) => new CustomType();
     }
 }

@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 
 namespace RefinedShell.Parsing
 {
     internal sealed class IntParser : ITypeParser
     {
-        public uint ArgumentCount => 1;
-        public uint OptionalCount => 0;
+        public IEnumerator<ArgumentInfo> GetArgumentInfo()
+        {
+            yield return new ArgumentInfo(1, false);
+        }
 
         public bool CanParse(ReadOnlySpan<string?> input)
         {

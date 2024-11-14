@@ -21,12 +21,12 @@ internal sealed class InstanceCommands
         _shell.Register(GetRandom, "random");
 
         ICommand command = _shell.GetCommand("random")!;
-        bool result = command.Execute([]).Success;
+        bool result = command.Execute([]).IsSuccess;
         Assert.That(result, Is.True);
 
         _shell.Unregister("random");
 
-        result = command.Execute([]).Success;
+        result = command.Execute([]).IsSuccess;
         Assert.That(result, Is.False);
     }
 
@@ -39,7 +39,7 @@ internal sealed class InstanceCommands
         GC.WaitForPendingFinalizers();
         GC.Collect();
 
-        bool result = random.Execute([]).Success;
+        bool result = random.Execute([]).IsSuccess;
         Assert.That(result, Is.False);
         _shell.RemoveNotValidCommands();
     }
@@ -49,7 +49,7 @@ internal sealed class InstanceCommands
         // ReSharper disable once ObjectCreationAsStatement
         new ClassWithCommands(_shell);
         ICommand command = _shell.GetCommand("random")!;
-        bool result = command.Execute([]).Success;
+        bool result = command.Execute([]).IsSuccess;
         Assert.That(result, Is.True);
         return command;
     }
@@ -62,7 +62,7 @@ internal sealed class InstanceCommands
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        bool success = _shell.Execute("Print error").Success;
+        bool success = _shell.Execute("Print error").IsSuccess;
         Assert.That(success, Is.False, "GC error");
         _shell.RemoveNotValidCommands();
         Assert.That(_shell.Count, Is.EqualTo(0));
@@ -72,7 +72,7 @@ internal sealed class InstanceCommands
     {
         // ReSharper disable once ObjectCreationAsStatement
         new ClassWithCommands(_shell);
-        bool success = _shell.Execute("Print success").Success;
+        bool success = _shell.Execute("Print success").IsSuccess;
         Assert.That(success, Is.True);
     }
 
@@ -81,10 +81,10 @@ internal sealed class InstanceCommands
     {
         _shell.Register(DivideRandom, "drandom");
         _shell.Register(GetRandom, "random");
-        bool success = _shell.Execute("drandom $(random)").Success;
+        bool success = _shell.Execute("drandom $(random)").IsSuccess;
         Assert.That(success, Is.True);
         _shell.Unregister("drandom");
-        success = _shell.Execute("drandom $(random)").Success;
+        success = _shell.Execute("drandom $(random)").IsSuccess;
         Assert.That(success, Is.False);
         _shell.Unregister("random");
     }

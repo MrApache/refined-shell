@@ -4,7 +4,7 @@ using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests.Examples.Correct;
 
-internal sealed class Example3 : IExample
+internal sealed class Example3_Instance_Sequence_Inline : IExample
 {
     public string Input => "command arg1 arg2; teleport $(getplayerpos)";
 
@@ -23,6 +23,7 @@ internal sealed class Example3 : IExample
         );
 
     public InterpreterException? Exception => null;
+
     public List<(string, TokenType)> Tokens =>
     [
         ("command", TokenType.Identifier),
@@ -36,24 +37,23 @@ internal sealed class Example3 : IExample
         (")", TokenType.CloseParenthesis)
     ];
 
-    public ExecutionResult ExecutionResult => new ExecutionResult(true, Array.Empty<ExecutionResult>(), ProblemSegment.None);
+    public ExecutionResult ExecutionResult => ExecutionResult.Success(Array.Empty<ExecutionResult>());
 
     public void RegisterCommands(Shell shell)
     {
-        shell.RegisterAllWithAttribute(this);
+        shell.Register(Command, "command");
+        shell.Register(Teleport, "teleport");
+        shell.Register(GetPlayerPos, "getplayerpos");
     }
 
     public void UnregisterCommands(Shell shell)
     {
-        shell.UnregisterAllWithAttribute(this);
+        shell.Unregister("command");
+        shell.Unregister("teleport");
+        shell.Unregister("getplayerpos");
     }
 
-    [ShellCommand("command")]
-    private static void Command(string arg1, string arg2) { }
-
-    [ShellCommand("teleport")]
-    private static void Teleport(short position) { }
-
-    [ShellCommand("getplayerpos")]
-    private static short GetPlayerPos() { return (short)Random.Shared.Next(); }
+    private void Command(string arg1, string arg2) { }
+    private void Teleport(short position) { }
+    private short GetPlayerPos() { return (short)Random.Shared.Next(); }
 }

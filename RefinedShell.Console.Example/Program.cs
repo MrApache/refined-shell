@@ -26,16 +26,16 @@ while(true)
         continue;
     }
     ExecutionResult result = shell.Execute(input);
-    switch (result.Error)
+    switch (result.ErrorType)
     {
         case ExecutionError.None:
             if(result.ReturnValue == null)
-                Console.WriteLine($"[{result.Success}]");
+                Console.WriteLine($"[{result.IsSuccess}]");
             else
-                Console.WriteLine($"[{result.Success}]->{result.ReturnValue}");
+                Console.WriteLine($"[{result.IsSuccess}]->{result.ReturnValue}");
             break;
         case ExecutionError.CommandNotFound:
-            Console.WriteLine($"[{result.Success}]->Command '{input.Substring(result.Segment)}' not found");
+            Console.WriteLine($"[{result.IsSuccess}]->Command '{input.Substring(result.Segment)}' not found");
             break;
         case ExecutionError.UnknownToken:
         case ExecutionError.InvalidUsageOfToken:
@@ -43,20 +43,20 @@ while(true)
         case ExecutionError.InsufficientArguments:
         case ExecutionError.TooManyArguments:
         case ExecutionError.InvalidArgumentType:
-            Console.WriteLine($"[{result.Success}]->{result.Error}: '{input.Substring(result.Segment)}'");
+            Console.WriteLine($"[{result.IsSuccess}]->{result.ErrorType}: '{input.Substring(result.Segment)}'");
             break;
         case ExecutionError.CommandHasNoReturnResult:
-            Console.WriteLine($"[{result.Success}]->Command '{input.Substring(result.Segment)}' has no return result");
+            Console.WriteLine($"[{result.IsSuccess}]->Command '{input.Substring(result.Segment)}' has no return result");
             break;
         case ExecutionError.CommandNotValid:
-            Console.WriteLine($"[{result.Success}]->Command '{input.Substring(result.Segment)}' is not valid");
+            Console.WriteLine($"[{result.IsSuccess}]->Command '{input.Substring(result.Segment)}' is not valid");
             break;
         case ExecutionError.ArgumentError:
             Console.WriteLine("TODO: ArgumentError");
             break;
         case ExecutionError.Exception:
             Exception exception = (Exception)result.ReturnValue!;
-            Console.WriteLine($"[{result.Success}]->{exception.GetType().Name}: {exception.Message}");
+            Console.WriteLine($"[{result.IsSuccess}]->{exception.GetType().Name}: {exception.Message}");
             break;
         default:
             throw new ArgumentOutOfRangeException();

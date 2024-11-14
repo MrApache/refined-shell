@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace RefinedShell.Parsing
 {
@@ -7,16 +8,8 @@ namespace RefinedShell.Parsing
     /// </summary>
     public interface ITypeParser
     {
-        /// <summary>
-        /// Gets the number of arguments available for parsing.
-        /// </summary>
-        public uint ArgumentCount { get; }
+        public IEnumerator<ArgumentInfo> GetArgumentInfo();
 
-        /// <summary>
-        /// Gets the number of optional arguments available for parsing.
-        /// </summary>
-        public uint OptionalCount { get; }
-        
         /// <summary>
         /// Determines whether the parser can parse the specified input.
         /// </summary>

@@ -4,11 +4,11 @@ using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests.Examples.Correct;
 
-internal sealed class Example10 : IExample
+internal sealed class Example10_LongSequence_Inline : StaticCommandsExample
 {
-    public string Input => "move right; command start run; teleport $(getplayerpos)";
+    public override string Input => "move right; command start run; teleport $(getplayerpos)";
 
-    public Expression Expression =>
+    public override Expression Expression =>
         new Expression(
             new CommandNode(new Token(0, 4, TokenType.Identifier), "move",
             [
@@ -25,9 +25,7 @@ internal sealed class Example10 : IExample
             ])
         );
 
-    public InterpreterException? Exception => null;
-
-    public List<(string, TokenType)> Tokens =>
+    public override List<(string, TokenType)> Tokens =>
     [
         ("move", TokenType.Identifier),
         ("right", TokenType.Identifier),
@@ -43,17 +41,7 @@ internal sealed class Example10 : IExample
         (")", TokenType.CloseParenthesis)
     ];
 
-    public ExecutionResult ExecutionResult => new ExecutionResult(true, Array.Empty<ExecutionResult>(), ProblemSegment.None);
-
-    public void RegisterCommands(Shell shell)
-    {
-        shell.RegisterAllWithAttribute(this);
-    }
-
-    public void UnregisterCommands(Shell shell)
-    {
-        shell.UnregisterAllWithAttribute(this);
-    }
+    public override ExecutionResult ExecutionResult => ExecutionResult.Success(Array.Empty<ExecutionResult>());
 
     [ShellCommand("move")]
     private static void Move(string direction){}

@@ -4,7 +4,7 @@ using RefinedShell.Interpreter;
 
 namespace RefinedShell.Tests.Examples.Correct;
 
-internal sealed class Example1 : IExample
+internal sealed class Example1_Instance_StringArgument : IExample
 {
     public string Input => "print \"hello, world!!!()@(@_)_\"";
 
@@ -23,21 +23,20 @@ internal sealed class Example1 : IExample
         ("\"hello, world!!!()@(@_)_\"", TokenType.String)
     ];
 
-    public ExecutionResult ExecutionResult => new ExecutionResult(true, null, ProblemSegment.None);
+    public ExecutionResult ExecutionResult => ExecutionResult.Success();
 
-    [ShellCommand("print")]
-    private static void Print(string message)
+    private void Print(string message)
     {
         Console.WriteLine(message);
     }
 
     public void RegisterCommands(Shell shell)
     {
-        shell.RegisterAllWithAttribute(this);
+        shell.Register(Print, "print");
     }
 
     public void UnregisterCommands(Shell shell)
     {
-        shell.UnregisterAllWithAttribute(this);
+        shell.Unregister("print");
     }
 }

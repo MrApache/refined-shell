@@ -1,22 +1,87 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using RefinedShell.Commands;
 using RefinedShell.Interpreter;
 using RefinedShell.Parsing;
+using RefinedShell.Utilities;
 
 namespace RefinedShell.Execution
 {
     internal sealed class Compiler
     {
         private readonly CommandCollection _commandCollection;
+        private readonly ParserLibrary _parsers;
 
-        public Compiler(CommandCollection collection)
+        private readonly Dictionary<StringToken, ExecutableExpression> _cache;
+        private readonly Parser _parser;
+        private readonly Semantic _analyzer;
+
+        public Compiler(CommandCollection collection, ParserLibrary parsers, int cache = 32)
         {
             _commandCollection = collection;
+            _parsers = parsers;
+            _cache = new Dictionary<StringToken, ExecutableExpression>(cache);
+            _parser = new Parser();
+            _analyzer = new Semantic(collection, parsers);
         }
 
-        public ExecutableExpression Compile(Expression expression)
+        public (Expression? expression, ProblemSegment problem) Analyze(StringToken input)
+        {
+            Expression? expression;
+            ProblemSegment segment;
+            try
+            {
+                expression = _parser.GetExpression(input);
+                segment = _analyzer.Analyze(expression);
+            }
+            catch (InterpreterException e)
+            {
+                expression = null;
+                segment = new ProblemSegment(e.Token.Start, e.Token.Length, e.Error);
+            }
+            return new ValueTuple<Expression?, ProblemSegment>(expression, segment);
+        }
+
+        public void ClearCache()
+        {
+            _cache.Clear();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ValueTuple<ExecutableExpression?, ProblemSegment> Success(ExecutableExpression expr)
+        {
+            return new ValueTuple<ExecutableExpression?, ProblemSegment>(expr, ProblemSegment.None);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ValueTuple<ExecutableExpression?, ProblemSegment> Error(ProblemSegment segment)
+        {
+            return new ValueTuple<ExecutableExpression?, ProblemSegment>(null, segment);
+        }
+
+        public ValueTuple<ExecutableExpression?, ProblemSegment> Compile(StringToken input)
+        {
+            if (_cache.TryGetValue(input, out ExecutableExpression compiledExpression)) {
+                return Success(compiledExpression);
+            }
+
+            (Expression? expression, ProblemSegment error) = Analyze(input);
+            if (error != ProblemSegment.None) {
+                return Error(error);
+            }
+
+            if (expression!.Count == 0) // unnamed error
+                return Error(ProblemSegment.None);
+
+            compiledExpression = Compile(expression);
+            _cache[input] = compiledExpression;
+
+            return Success(compiledExpression);
+        }
+
+        private ExecutableExpression Compile(Expression expression)
         {
             if (expression.Count > 1)
             {
@@ -40,11 +105,39 @@ namespace RefinedShell.Execution
         private ExecutableCommand CompileCommand(CommandNode commandNode)
         {
             ICommand command = _commandCollection[commandNode.Command];
-            IArgument[] arguments = ParseArguments(command, commandNode.Arguments);
+            IArgument[] arguments = ParseArguments(command.Arguments, commandNode.Arguments);
             return new ExecutableCommand(command, arguments, commandNode.Token);
         }
 
-        private IArgument[] ParseArguments(ICommand command, Node[] argumentNodes)
+        private IArgument[] ParseArguments(Arguments argsDecl, Node[] argsNode)
+        {
+            IArgument[] compiledArguments = new IArgument[argsDecl.Count];
+            int start = 0;
+            for (int i = 0; i < argsDecl.Count; i++) {
+                bool skip = false;
+                Argument arg = argsDecl[i];
+                ITypeParser parser = _parsers.GetParser(arg.Type);
+                IEnumerator<ArgumentInfo> argInfo = parser.GetArgumentInfo();
+                while (argInfo.MoveNext() && !skip) {
+                    ArgumentInfo current = argInfo.Current;
+                    int length = (int)current.ElementCount;
+                    if (arg.IsOptional && start + length > argsNode.Length) {
+                        compiledArguments[i] = new ParsedArgument(Type.Missing);
+                        skip = true;
+                        continue;
+                    }
+
+                    Span<Node> slice = argsNode.AsSpan(start, length);
+                    compiledArguments[i] = ParseArgument(parser, slice);
+                    start += length;
+                    break;
+                }
+            }
+
+            return compiledArguments;
+        }
+
+        /*private IArgument[] ParseArguments(ICommand command, Node[] argumentNodes)
         {
             IArgument[] compiledArguments = new IArgument[command.Arguments.Count];
             int start = 0;
@@ -52,7 +145,7 @@ namespace RefinedShell.Execution
             for (int i = 0; i < command.Arguments.Count; i++)
             {
                 Argument argument = command.Arguments[i];
-                ITypeParser parser = TypeParsers.GetParser(argument.Type);
+                ITypeParser parser = _parsers.GetParser(argument.Type);
                 if (argument.IsOptional)
                 {
                     if(i >= argumentNodes.Length)
@@ -70,7 +163,7 @@ namespace RefinedShell.Execution
             }
 
             return compiledArguments;
-        }
+        }*/
 
         private IArgument ParseArgument(ITypeParser parser, ReadOnlySpan<Node> argumentNodes)
         {

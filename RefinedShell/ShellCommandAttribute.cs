@@ -8,7 +8,7 @@ namespace RefinedShell
     /// An attribute that marks a method as a shell command.
     /// </summary>
     [MeansImplicitUse]
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field)]
     public sealed class ShellCommandAttribute : Attribute
     {
         /// <summary>

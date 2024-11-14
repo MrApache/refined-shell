@@ -20,7 +20,7 @@ namespace RefinedShell.Commands
                 return new ExecutionResult(false, 0, 0, ExecutionError.CommandNotValid, null);
             }
             object? returnValue = _method.Invoke(GetTarget(), args);
-            return new ExecutionResult(true, 0, 0, ExecutionError.None, returnValue);
+            return ExecutionResult.Success(returnValue);
         }
     }
 }

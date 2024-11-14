@@ -7,7 +7,7 @@ namespace RefinedShell.Tests.Parsing;
 
 [TestFixture]
 [TestOf(typeof(Vector2Parser))]
-[TestOf(typeof(TypeParsers))]
+[TestOf(typeof(ParserLibrary))]
 internal sealed class CustomTypeParsing : TypeParsing<Vector2>
 {
     protected override Dictionary<string, (bool result, Vector2 value)> TestCases =>
@@ -20,6 +20,6 @@ internal sealed class CustomTypeParsing : TypeParsing<Vector2>
 
     public CustomTypeParsing()
     {
-        TypeParsers.AddParser<Vector2>(new Vector2Parser());
+        ParserLibrary.Default.AddParser<Vector2>(new Vector2Parser());
     }
 }

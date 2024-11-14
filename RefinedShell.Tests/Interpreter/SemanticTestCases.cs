@@ -6,8 +6,8 @@ using RefinedShell.Interpreter;
 namespace RefinedShell.Tests;
 
 [TestFixture]
-[TestOf(typeof(SemanticAnalyzer))]
-internal sealed class SemanticAnalyzerTestCases
+[TestOf(typeof(Semantic))]
+internal sealed class SemanticTestCases
 {
     private readonly Dictionary<string, ExecutionError> _testCases
         = new Dictionary<string, ExecutionError>
@@ -83,7 +83,7 @@ internal sealed class SemanticAnalyzerTestCases
     public void Setup()
     {
         _shell = new Shell();
-        _shell.RegisterAllWithAttribute<SemanticAnalyzerTestCases>(null);
+        _shell.RegisterAllWithAttribute<SemanticTestCases>(null);
     }
 
     [Test]
@@ -92,7 +92,7 @@ internal sealed class SemanticAnalyzerTestCases
         foreach ((string input, ExecutionError errorType) in _testCases)
         {
             ProblemSegment error = _shell.Analyze(input);
-            Assert.That(error.Error, Is.EqualTo(errorType));
+            Assert.That(error.Error, Is.EqualTo(errorType), $"Test case: {input}");
         }
     }
 }

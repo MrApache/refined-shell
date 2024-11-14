@@ -1,32 +1,54 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using RefinedShell.Commands;
-using RefinedShell.Interpreter;
-using RefinedShell.Parsing;
 using RefinedShell.Utilities;
 
 namespace RefinedShell
 {
     public sealed partial class Shell
     {
-        private IEnumerable<MemberInfo> GetMembers<T>(bool instance)
+        private static IEnumerable<MemberInfo> GetMembers(Type type, bool instance, bool includeAll)
         {
             BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
             if (instance) {
                 flags |= BindingFlags.Instance;
             }
 
-            return typeof(T)
+            Type? baseType = type;
+
+            if (includeAll) {
+                IEnumerable<MemberInfo> collection = Enumerable.Empty<MemberInfo>();
+                while (baseType != null) {
+                    collection = collection.Concat(baseType.GetMembers(flags)
+                        .WithAttribute<MemberInfo, ShellCommandAttribute>());
+                    baseType = baseType.BaseType;
+                }
+
+                return collection;
+            }
+
+            return type
                 .GetMembers(flags)
                 .WithAttribute<MemberInfo, ShellCommandAttribute>();
         }
 
         // Maybe replace with logs
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfContains(StringToken name)
         {
             if(_commands.Contains(name)) {
                 throw new ArgumentException($"Command with name '{name}' is already registered.");
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ThrowIfParserNotDefined(Type type)
+        {
+            if (!_parsers.Contains(type)) {
+                throw new Exception($"Parser for type '{type}' not found");
             }
         }
 
@@ -37,16 +59,15 @@ namespace RefinedShell
             MethodInfo? set = property.SetMethod;
             ICommand result;
 
-            if(get != null && set != null)
-            {
+            if(get != null && set != null) {
+                ThrowIfParserNotDefined(property.PropertyType);
                 result = new GetSetProperty(name, property, target);
             }
-            else if (get == null)
-            {
+            else if (get == null) {
+                ThrowIfParserNotDefined(property.PropertyType);
                 result = new SingleAccessProperty(name, property, target, property.SetMethod);
             }
-            else
-            {
+            else {
                 result = new SingleAccessProperty(name, property, target, property.GetMethod);
             }
             _commands[result.Name] = result;
@@ -56,13 +77,20 @@ namespace RefinedShell
         {
             ThrowIfContains(name);
             ParameterInfo[] parameters = method.GetParameters();
-            foreach (ParameterInfo parameter in parameters)
-            {
-                if (!TypeParsers.Contains(parameter.ParameterType))
-                    throw new Exception($"Parser for type '{parameter.ParameterType}' not found");
+            foreach (ParameterInfo parameter in parameters) {
+                ThrowIfParserNotDefined(parameter.ParameterType);
             }
 
             _commands[name] = new DelegateCommand(name, method, target);
+        }
+
+        private void RegisterFieldInternal(FieldInfo field, object? target, StringToken name)
+        {
+            ThrowIfContains(name);
+            if (!field.IsInitOnly) {
+                ThrowIfParserNotDefined(field.FieldType);
+            }
+            _commands[name] = new Field(name, field, target);
         }
 
         private void RegisterMemberInternal(MemberInfo member, object? target, string name)
@@ -79,24 +107,12 @@ namespace RefinedShell
                     RegisterPropertyInternal(property, target, name);
                     break;
                 }
+                case FieldInfo field:
+                {
+                    RegisterFieldInternal(field, target, name);
+                    break;
+                }
             }
-        }
-
-        private (Expression? expression, ProblemSegment problem) AnalyzeInternal(StringToken input)
-        {
-            Expression? expression;
-            ProblemSegment segment;
-            try
-            {
-                expression = _parser.GetExpression(input);
-                segment = _analyzer.Analyze(expression);
-            }
-            catch (InterpreterException e)
-            {
-                expression = null;
-                segment = new ProblemSegment(e.Token.Start, e.Token.Length, e.Error);
-            }
-            return new ValueTuple<Expression?, ProblemSegment>(expression, segment);
         }
     }
 }

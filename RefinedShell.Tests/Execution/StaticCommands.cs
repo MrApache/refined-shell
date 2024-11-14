@@ -10,7 +10,7 @@ internal sealed class StaticCommands : DefaultShellSetup_Static
     [Test]
     public void ExecuteStatic_Attribute()
     {
-        bool result = Shell.Execute("Print hello_world").Success;
+        bool result = Shell.Execute("Print hello_world").IsSuccess;
         Assert.That(result, Is.True);
     }
 
@@ -18,7 +18,7 @@ internal sealed class StaticCommands : DefaultShellSetup_Static
     public void ExecuteStatic_Manual()
     {
         ExecutionResult result = Shell.Execute("random");
-        Assert.That(result.Success, Is.True);
+        Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.ReturnValue, Is.TypeOf<int>());
     }
 
@@ -26,6 +26,6 @@ internal sealed class StaticCommands : DefaultShellSetup_Static
     public void ExecuteStatic_Combined()
     {
         ExecutionResult result = Shell.Execute("Print $(random)");
-        Assert.That(result.Success, Is.True);
+        Assert.That(result.IsSuccess, Is.True);
     }
 }
