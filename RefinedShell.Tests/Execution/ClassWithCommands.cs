@@ -10,7 +10,7 @@ internal sealed class ClassWithCommands
         shell.Register(GetRandom, "random");
     }
 
-    [ShellCommand]
+    [ShellFunction]
     private void Print(string message)
     {
         Console.WriteLine(message);

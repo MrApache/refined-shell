@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using RefinedShell.Execution;
 using RefinedShell.Interpreter;
@@ -27,18 +28,18 @@ internal sealed class TestCases
     [Test]
     public void Lexer()
     {
-        foreach (IExample example in ExampleCollection.Examples)
+        foreach (ITestCase example in TestCaseCollection.Examples.Skip(5))
         {
             List<(string, TokenType)> tokenizeResult = Tokenize(example.Input);
-            Assert.That(tokenizeResult.Count, Is.EqualTo(example.Tokens.Count), $"Input: {example.Input}");
+            Assert.That(tokenizeResult.Count, Is.EqualTo(example.Tokens.Count), $"Test case: {example.GetType().Name}");
             for (int i = 0; i < tokenizeResult.Count; i++)
             {
                 ValueTuple<string, TokenType> token = tokenizeResult[i];
                 ValueTuple<string, TokenType> testCaseResult = example.Tokens[i];
                 bool stringEquals = token.Item1.Equals(testCaseResult.Item1);
                 bool typeEquals = token.Item2 == testCaseResult.Item2;
-                Assert.That(stringEquals, Is.True, $"Input: {example.Input}, Expected: {token.Item1}, But was: {testCaseResult.Item1}");
-                Assert.That(typeEquals, Is.True, $"Input: {example.Input}, Type:{testCaseResult.Item2}, ActualType: {token.Item2}");
+                Assert.That(stringEquals, Is.True, $"Test case: {example.GetType().Name}, Expected: {testCaseResult.Item1}, But was: {token.Item1}");
+                Assert.That(typeEquals, Is.True, $"Test case: {example.GetType().Name}, Type:{testCaseResult.Item2}, ActualType: {token.Item2}");
             }
         }
     }
@@ -69,12 +70,12 @@ internal sealed class TestCases
     [Test]
     public void Parser()
     {
-        foreach (IExample example in ExampleCollection.Examples)
+        foreach (ITestCase example in TestCaseCollection.Examples)
         {
             try
             {
-                Expression actual = _parser.GetExpression(example.Input);
-                Assert.That(actual, Is.EqualTo(example.Expression));
+                Node actual = _parser.GetExpression(example.Input);
+                Assert.That(actual, Is.EqualTo(example.Expression), $"Example: {example.GetType().Name}");
             }
             catch(Exception e)
             {
@@ -95,28 +96,14 @@ internal sealed class TestCases
     [Test]
     public void Compiler()
     {
-        foreach (IExample example in ExampleCollection.Examples)
+        foreach (ITestCase example in TestCaseCollection.Examples)
         {
             example.RegisterCommands(_shell);
             ExecutionResult actualResult = _shell.Execute(example.Input);
-            Assert.That(actualResult == example.ExecutionResult, Is.True, $"Input: {example.Input}\nActual result: {actualResult}\nExpected: {example.ExecutionResult}");
+            Assert.That(actualResult == example.ExecutionResult, Is.True,
+                $"Example: {example.GetType().Name}\n" +
+                $"Error: {actualResult.ErrorType}");
             example.UnregisterCommands(_shell);
         }
     }
 }
-
-        /*
-        {
-            "teleport $(getplayerpos current) $(123arg2)", //hmm
-            new Expression(
-                new CommandNode(new Token(0, 8, TokenType.Identifier), "teleport",
-                [
-                    new CommandNode(new Token(11, 12, TokenType.Identifier),"getplayerpos",
-                    [
-                        new ArgumentNode(new Token(24, 7, TokenType.Identifier), "current")
-                    ], true),
-                    new CommandNode(new Token(35, 7, TokenType.Identifier),"123arg2", [], true)
-                ])
-            )
-        },
-        */

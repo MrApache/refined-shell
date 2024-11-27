@@ -23,7 +23,7 @@ internal sealed class Executors
         _safe.RegisterAllWithAttribute<Executors>(null);
     }
 
-    [ShellCommand("getPlayer")]
+    [ShellFunction("getPlayer")]
     private static void GetPlayer(bool throwException)
     {
         if (throwException)

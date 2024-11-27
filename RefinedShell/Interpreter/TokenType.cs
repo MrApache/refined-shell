@@ -14,6 +14,8 @@ namespace RefinedShell.Interpreter
         String = 32,
         Number = 64,
         Whitespace = 128,
-        Identifier = 256
+        Identifier = 256,
+        Ampersand = 512,
+        VerticalBar = 1024
     }
 }

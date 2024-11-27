@@ -6,13 +6,13 @@ internal sealed class CommandCollection
 {
     private readonly Shell _shell;
 
-    [ShellCommand("Health")]
+    [ShellFunction("Health")]
     public static int Health { get; set; }
 
-    [ShellCommand("speed")]
+    [ShellFunction("speed")]
     public static float Speed => _damage;
 
-    [ShellCommand("damage")]
+    [ShellFunction("damage")]
     public static float Damage
     {
         set => _damage = value;
@@ -55,7 +55,7 @@ internal sealed class CommandCollection
         return a * b;
     }
 
-    [ShellCommand("print")]
+    [ShellFunction("print")]
     private static void Print(string message)
     {
         Console.WriteLine(message);
@@ -69,13 +69,13 @@ internal sealed class CommandCollection
         return result;
     }
 
-    [ShellCommand("rm_cmd")]
+    [ShellFunction("rm_cmd")]
     private bool RemoveCommand(string name)
     {
         return _shell.Unregister(name);
     }
 
-    [ShellCommand("dispose")]
+    [ShellFunction("dispose")]
     private bool DisposeCommand(string name)
     {
         ICommand? command = _shell.GetCommand(name);
@@ -85,13 +85,13 @@ internal sealed class CommandCollection
         return true;
     }
 
-    [ShellCommand("null")]
+    [ShellFunction("null")]
     private string? GetNullString()
     {
         return null;
     }
 
-    [ShellCommand("attrb")]
+    [ShellFunction("attrb")]
     private string GetAttrb(string name, int value = 0)
     {
         return $"{name}: {value}";

@@ -3,7 +3,7 @@ namespace RefinedShell.Parsing
     /// <summary>
     /// Provides information about an argument
     /// </summary>
-    public struct ArgumentInfo
+    public readonly struct ArgumentInfo
     {
         /// <summary>
         /// Gets the number of elements associated with the argument.

@@ -26,89 +26,221 @@ namespace RefinedShell.Interpreter
 
         private Token? Match(TokenType types)
         {
+            GetNextToken();
             Token current = _currentToken;
             TokenType result = current.Type & types;
             if(result == current.Type && result != 0) {
-                GetNextToken();
                 return current;
             }
 
             return null;
         }
 
-        public Expression GetExpression(ReadOnlySpan<char> input)
+        private void ThrowIfNull(Token? token)
         {
-            Expression expression = new Expression();
-            _lexer.SetInputString(input.ToString());
-            GetNextToken();
-            while(true) {
-                CommandNode commandNode;
-                Token token = _currentToken;
-                switch (token.Type)
-                {
-                    case TokenType.Identifier:
-                    {
-                        commandNode = ParseCommand(input);
-                        break;
-                    }
-                    case TokenType.Semicolon:
-                    {
-                        GetNextToken();
-                        continue;
-                    }
-                    case TokenType.Dollar:
-                    {
-                        commandNode = ParseInlineCommand(input);
-                        break;
-                    }
-                    case TokenType.EndOfLine:
-                    {
-                        return expression;
-                    }
-                    case TokenType.String:
-                    case TokenType.OpenParenthesis:
-                    case TokenType.CloseParenthesis:
-                    {
-                        throw new InterpreterException(ExecutionError.InvalidUsageOfToken, _currentToken);
-                    }
-                    case TokenType.Number:
-                    {
-                        throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
-                    }
-                    case TokenType.Unknown:
-                    default:
-                    {
-                        throw new InterpreterException(ExecutionError.UnknownToken, _currentToken);
-                    }
-                }
-                expression.Add(commandNode);
-                if (Match(TokenType.Semicolon) == null)
-                    break;
-            }
+            if (token != null)
+                return;
 
-            return expression;
+            switch (_currentToken.Type) {
+                case TokenType.Unknown: throw new InterpreterException(ExecutionError.UnknownToken, _currentToken);
+                case TokenType.EndOfLine:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.Semicolon:
+                    throw new InterpreterException(ExecutionError.InvalidUsageOfToken, _currentToken);
+                case TokenType.Dollar:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.OpenParenthesis:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.CloseParenthesis:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.String:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.Number:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.Whitespace:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.Identifier:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.Ampersand:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+                case TokenType.VerticalBar:
+                    throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
+            }
         }
 
-        private List<Node> ParseArguments(ReadOnlySpan<char> input, bool inlineArguments = false)
+        private void ConsumeOpenParenthesis()
+        {
+            Token? token = Match(TokenType.OpenParenthesis);
+            ThrowIfNull(token);
+        }
+
+        private void ConsumeCloseParenthesis()
+        {
+            Token? token = Match(TokenType.CloseParenthesis);
+            ThrowIfNull(token);
+        }
+
+        private void ConsumeAmpersand()
+        {
+            Token? token = Match(TokenType.Ampersand);
+            ThrowIfNull(token);
+        }
+
+        private void ConsumeVerticalBar()
+        {
+            Token? token = Match(TokenType.VerticalBar);
+            ThrowIfNull(token);
+        }
+
+        private void ConsumeDollar()
+        {
+            Token? token = Match(TokenType.Dollar);
+            ThrowIfNull(token);
+        }
+
+        private Token ConsumeSemicolon()
+        {
+            Token? token = Match(TokenType.Semicolon);
+            ThrowIfNull(token);
+            return token!.Value;
+        }
+
+        private Token ConsumeIdentifier()
+        {
+            Token? token = Match(TokenType.Identifier);
+            ThrowIfNull(token);
+            return token!.Value;
+        }
+
+        private Token ConsumeNumber()
+        {
+            Token? token = Match(TokenType.Number);
+            ThrowIfNull(token);
+            return token!.Value;
+        }
+
+        private Token? TryConsumeArgument()
+        {
+            return Match(TokenType.Identifier | TokenType.Number
+                    | TokenType.String | TokenType.Dollar);
+        }
+
+        private Token ConsumeCommand()
+        {
+            Token? token = Match(TokenType.Identifier | TokenType.Dollar);
+            ThrowIfNull(token);
+            return token!.Value;
+        }
+
+        private Token? ConsumeEndOfLine()
+        {
+            Token? token = Match(TokenType.EndOfLine);
+            ThrowIfNull(token);
+            return token!.Value;
+        }
+
+        private Token? TryConsumeLogicalToken()
+        {
+            return Match(TokenType.Semicolon | TokenType.Ampersand
+                    | TokenType.VerticalBar);
+        }
+
+        public Node GetExpression(ReadOnlySpan<char> input)
+        {
+            _currentToken = default;
+            _lexer.SetInputString(input.ToString());
+            Node tree = ParseExpression(input);
+            ConsumeEndOfLine();
+            return tree;
+        }
+
+        private Node ParseExpression(ReadOnlySpan<char> input)
+        {
+            CommandNode first = ParseCommand(input);
+            Node second;
+            Token token = TryConsumeLogicalToken() ?? default;
+            switch(token.Type)
+            {
+                case TokenType.Ampersand:
+                {
+                    ConsumeAmpersand();
+                    second = ParseExpression(input);
+                    return new LogicalNode(first, second, LogicalNode.LogicalNodeType.And);
+                }
+                case TokenType.VerticalBar:
+                {
+                    ConsumeVerticalBar();
+                    second = ParseExpression(input);
+                    return new LogicalNode(first, second, LogicalNode.LogicalNodeType.Or);
+                }
+                case TokenType.Semicolon:
+                {
+                    second = ParseExpression(input);
+                    return new SequenceNode(first, second);
+                }
+                default:
+                {
+                    GetPreviousToken();
+                    break;
+                }
+            }
+            return first;
+        }
+
+        private CommandNode ParseCommand(ReadOnlySpan<char> input, bool inline = false)
+        {
+            CommandNode node = null!;
+            Token token = ConsumeCommand();
+            GetPreviousToken();
+            switch (token.Type)
+            {
+                case TokenType.Identifier:
+                {
+                    token = ConsumeCommand();
+                    ReadOnlySpan<char> commandName = input.Slice(token.Start, token.Length);
+                    List<Node> arguments = ParseArguments(input);
+                    node = new CommandNode(token, commandName.ToString(), arguments.ToArray(), inline);
+                    break;
+                }
+                case TokenType.Dollar:
+                {
+                    node = ParseInlineCommand(input);
+                    break;
+                }
+            }
+            return node;
+        }
+
+        private CommandNode ParseInlineCommand(ReadOnlySpan<char> input)
+        {
+            ConsumeDollar();
+            ConsumeOpenParenthesis();
+            CommandNode command = ParseCommand(input, true);
+            ConsumeCloseParenthesis();
+            return command;
+        }
+
+        private List<Node> ParseArguments(ReadOnlySpan<char> input)
         {
             List<Node> list = new List<Node>();
-            while (true)
-            {
-                Token token = _currentToken;
-                GetNextToken();
-                switch (token.Type)
+            while (true) {
+                Token? token = TryConsumeArgument();
+                if(token == null)
+                    break;
+
+                switch (token.Value.Type)
                 {
                     case TokenType.String:
                     {
-                        ReadOnlySpan<char> argument = input.Slice(token.Start + 1, token.Length - 2); //Remove quotes
-                        list.Add(new ArgumentNode(token, argument.ToString()));
+                        ReadOnlySpan<char> argument = input.Slice(token.Value.Start + 1, token.Value.Length - 2); //Remove quotes
+                        list.Add(new ArgumentNode(token.Value, argument.ToString()));
                         break;
                     }
                     case TokenType.Number:
                     case TokenType.Identifier:
                     {
-                        ReadOnlySpan<char> argument = input.Slice(token.Start, token.Length);
-                        list.Add(new ArgumentNode(token, argument.ToString()));
+                        ReadOnlySpan<char> argument = input.Slice(token.Value.Start, token.Value.Length);
+                        list.Add(new ArgumentNode(token.Value, argument.ToString()));
                         break;
                     }
                     case TokenType.Dollar:
@@ -117,68 +249,10 @@ namespace RefinedShell.Interpreter
                         list.Add(ParseInlineCommand(input));
                         break;
                     }
-                    case TokenType.EndOfLine:
-                    case TokenType.Semicolon:
-                    {
-                        GetPreviousToken();
-                        return list;
-                    }
-                    case TokenType.OpenParenthesis:
-                    {
-                        throw new InterpreterException(ExecutionError.UnexpectedToken, token);
-                    }
-                    case TokenType.CloseParenthesis:
-                    {
-                        if(inlineArguments)
-                        {
-                            GetPreviousToken();
-                            return list;
-                        }
-                        throw new InterpreterException(ExecutionError.InvalidUsageOfToken, token);
-                    }
-                    case TokenType.Unknown:
-                    default:
-                    {
-                        throw new InterpreterException(ExecutionError.UnknownToken, token);
-                    }
                 }
             }
-        }
-
-        private CommandNode ParseInlineCommand(ReadOnlySpan<char> input)
-        {
-            if (Match(TokenType.Dollar) == null)
-            {
-                throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
-            }
-
-            if(Match(TokenType.OpenParenthesis) == null)
-            {
-                throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
-            }
-
-            CommandNode command = ParseCommand(input, true);
-            if (Match(TokenType.CloseParenthesis) == null)
-                throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
-
-            return command;
-        }
-        
-        private CommandNode ParseCommand(ReadOnlySpan<char> input, bool inline = false)
-        {
-            if (Match(TokenType.Identifier | TokenType.Dollar) == null)
-            {
-                if(_currentToken.Type == TokenType.Unknown)
-                    throw new InterpreterException(ExecutionError.UnknownToken, _currentToken);
-                throw new InterpreterException(ExecutionError.UnexpectedToken, _currentToken);
-            }
-
             GetPreviousToken();
-            Token commandToken = _currentToken;
-            ReadOnlySpan<char> commandName = input.Slice(_currentToken.Start, _currentToken.Length);
-            GetNextToken();
-            List<Node> arguments = ParseArguments(input, inline);
-            return new CommandNode(commandToken, commandName.ToString(), arguments.ToArray(), inline);
+            return list;
         }
     }
 }

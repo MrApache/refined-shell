@@ -10,7 +10,7 @@ namespace RefinedShell.Tests;
 internal sealed class SemanticTestCases
 {
     private readonly Dictionary<string, ExecutionError> _testCases
-        = new Dictionary<string, ExecutionError>
+        = new()
         {
             {
                 "command arg1 arg2",
@@ -64,19 +64,19 @@ internal sealed class SemanticTestCases
 
     private Shell _shell = null!;
 
-    [ShellCommand("command")]
+    [ShellFunction("command")]
     private static void Command(string arg1, string arg2) { }
 
-    [ShellCommand("command1")]
+    [ShellFunction("command1")]
     private static void Command1(string arg1, string arg2, string arg3) {}
 
-    [ShellCommand("command2")]
+    [ShellFunction("command2")]
     private static void Command2(int value) {}
 
-    [ShellCommand("getValue")]
+    [ShellFunction("getValue")]
     private static int GetValue() => 0;
 
-    [ShellCommand("convertValue")]
+    [ShellFunction("convertValue")]
     private static int CovertValue(int value) => 0;
 
     [SetUp]

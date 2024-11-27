@@ -6,26 +6,26 @@ namespace RefinedShell.Interpreter
 {
     internal sealed class Expression : Node
     {
-        private readonly List<CommandNode> _nodes;
+        private readonly List<Node> _nodes;
 
         public int Count => _nodes.Count;
 
         public Expression()
         {
-            _nodes = new List<CommandNode>();
+            _nodes = new List<Node>();
         }
 
-        internal Expression(params CommandNode[] list)
+        public Expression(params Node[] list)
         {
             _nodes = list.ToList();
         }
 
-        public void Add(CommandNode node)
+        public void Add(Node node)
         {
             _nodes.Add(node);
         }
 
-        public List<CommandNode>.Enumerator GetEnumerator()
+        public List<Node>.Enumerator GetEnumerator()
         {
             return _nodes.GetEnumerator();
         }

@@ -123,22 +123,22 @@ internal sealed class Registration
 
     private sealed class MethodsWithAttributes
     {
-        [ShellCommand]
+        [ShellFunction]
         public static string Name { get; set; } = "Value";
 
-        [ShellCommand]
+        [ShellFunction]
         public float Health { get; }
 
-        [ShellCommand]
+        [ShellFunction]
         public static int Damage { get; }
 
-        [ShellCommand]
+        [ShellFunction]
         public static void Command1() {}
 
-        [ShellCommand("cmd2")]
+        [ShellFunction("cmd2")]
         public static void Command2(int value1, bool value2) { }
 
-        [ShellCommand("instance")]
+        [ShellFunction("instance")]
         public void Command3() {}
 
         public static void Command4_Exception(MethodsWithAttributes value) {}

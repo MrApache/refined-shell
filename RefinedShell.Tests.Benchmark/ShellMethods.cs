@@ -15,7 +15,7 @@ public class ShellMethods
         _shell.RegisterAllWithAttribute<CommandCollection>(null);
     }
 
-    [ShellCommand("set")]
+    [ShellFunction("set")]
     private static void SetValue(string name, int value) { }
 
     //[Benchmark]

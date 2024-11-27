@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using RefinedShell.Commands;
 using RefinedShell.Interpreter;
 using RefinedShell.Parsing;
@@ -14,34 +13,21 @@ namespace RefinedShell.Execution
         private readonly CommandCollection _commandCollection;
         private readonly ParserLibrary _parsers;
 
-        private readonly Dictionary<StringToken, ExecutableExpression> _cache;
+        private readonly Dictionary<StringToken, Expression> _cache;
         private readonly Parser _parser;
         private readonly Semantic _analyzer;
+
+        private IReadOnlyCommand[] _usedCommands;
+        private uint _position;
 
         public Compiler(CommandCollection collection, ParserLibrary parsers, int cache = 32)
         {
             _commandCollection = collection;
             _parsers = parsers;
-            _cache = new Dictionary<StringToken, ExecutableExpression>(cache);
+            _cache = new Dictionary<StringToken, Expression>(cache);
             _parser = new Parser();
             _analyzer = new Semantic(collection, parsers);
-        }
-
-        public (Expression? expression, ProblemSegment problem) Analyze(StringToken input)
-        {
-            Expression? expression;
-            ProblemSegment segment;
-            try
-            {
-                expression = _parser.GetExpression(input);
-                segment = _analyzer.Analyze(expression);
-            }
-            catch (InterpreterException e)
-            {
-                expression = null;
-                segment = new ProblemSegment(e.Token.Start, e.Token.Length, e.Error);
-            }
-            return new ValueTuple<Expression?, ProblemSegment>(expression, segment);
+            _usedCommands = Array.Empty<IReadOnlyCommand>();
         }
 
         public void ClearCache()
@@ -49,62 +35,85 @@ namespace RefinedShell.Execution
             _cache.Clear();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ValueTuple<ExecutableExpression?, ProblemSegment> Success(ExecutableExpression expr)
+        public InternalResult<Node> Analyze(StringToken input)
         {
-            return new ValueTuple<ExecutableExpression?, ProblemSegment>(expr, ProblemSegment.None);
+            Node? expression;
+            InternalResult<Node> analysis;
+            try {
+                expression = _parser.GetExpression(input);
+                analysis = _analyzer.Analyze(expression);
+            }
+            catch (InterpreterException e) {
+                expression = null;
+                analysis = new InternalResult<Node>(null, new ProblemSegment(e.Token.Start, e.Token.Length, e.Error), 0);
+            }
+            return new InternalResult<Node>(expression, analysis.Segment, analysis.CommandsCount);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ValueTuple<ExecutableExpression?, ProblemSegment> Error(ProblemSegment segment)
+        public InternalResult<Expression> Compile(StringToken input)
         {
-            return new ValueTuple<ExecutableExpression?, ProblemSegment>(null, segment);
-        }
-
-        public ValueTuple<ExecutableExpression?, ProblemSegment> Compile(StringToken input)
-        {
-            if (_cache.TryGetValue(input, out ExecutableExpression compiledExpression)) {
-                return Success(compiledExpression);
+            if (_cache.TryGetValue(input, out Expression expression)) {
+                return new InternalResult<Expression>(expression, ProblemSegment.None, (uint)expression.Commands.Length);
             }
 
-            (Expression? expression, ProblemSegment error) = Analyze(input);
-            if (error != ProblemSegment.None) {
-                return Error(error);
+            InternalResult<Node> result = Analyze(input);
+            if (result.Segment != ProblemSegment.None) {
+                return new InternalResult<Expression>(result.Segment);
             }
 
-            if (expression!.Count == 0) // unnamed error
-                return Error(ProblemSegment.None);
+            _usedCommands = new IReadOnlyCommand[result.CommandsCount];
 
-            compiledExpression = Compile(expression);
-            _cache[input] = compiledExpression;
+            ExecutableExpression executableExpression = CompileNode(result.Expression!);
+            expression = new Expression(executableExpression, _usedCommands);
+            _usedCommands = Array.Empty<IReadOnlyCommand>();
+            _position = 0;
+            _cache[input] = expression;
 
-            return Success(compiledExpression);
+            return new InternalResult<Expression>(expression, ProblemSegment.None, (uint)expression.Commands.Length);
         }
 
-        private ExecutableExpression Compile(Expression expression)
+        private ExecutableExpression CompileNode(Node node)
         {
-            if (expression.Count > 1)
+            return node switch
             {
-                int i = 0;
-                ExecutableCommand[] sequence = new ExecutableCommand[expression.Count];
-                foreach (CommandNode commandNode in expression)
-                {
-                    sequence[i++] = CompileCommand(commandNode);
-                }
+                CommandNode cn => CompileCommand(cn),
+                LogicalNode ln => CompileLogicalExpression(ln),
+                SequenceNode sq => CompileSequence(sq),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
 
-                return new ExecutableCommandSequence(sequence);
-            }
+        internal void CompileNode_TestCompatible(Node node, uint size)
+        {
+            _usedCommands = new IReadOnlyCommand[size];
+            CompileNode(node);
+            _usedCommands = Array.Empty<IReadOnlyCommand>();
+            _position = 0;
+        }
 
-            List<CommandNode>.Enumerator enumerator = expression.GetEnumerator();
-            enumerator.MoveNext();
-            CommandNode node = enumerator.Current!;
-            enumerator.Dispose();
-            return CompileCommand(node);
+        private ExecutableExpression CompileLogicalExpression(LogicalNode logicalNode)
+        {
+            ExecutableCommand first = CompileCommand(logicalNode.First);
+            ExecutableExpression second = CompileNode(logicalNode.Second);
+            return logicalNode.Type switch
+            {
+                LogicalNode.LogicalNodeType.And => new CommandAND(first, second),
+                LogicalNode.LogicalNodeType.Or => new CommandOR(first, second),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        private ExecutableSequence CompileSequence(SequenceNode sequenceNode)
+        {
+            ExecutableCommand first = CompileCommand(sequenceNode.First);
+            ExecutableExpression second = CompileNode(sequenceNode.Second);
+            return new ExecutableSequence(first, second);
         }
 
         private ExecutableCommand CompileCommand(CommandNode commandNode)
         {
             ICommand command = _commandCollection[commandNode.Command];
+            _usedCommands[_position++] = command;
             IArgument[] arguments = ParseArguments(command.Arguments, commandNode.Arguments);
             return new ExecutableCommand(command, arguments, commandNode.Token);
         }
@@ -117,7 +126,7 @@ namespace RefinedShell.Execution
                 bool skip = false;
                 Argument arg = argsDecl[i];
                 ITypeParser parser = _parsers.GetParser(arg.Type);
-                IEnumerator<ArgumentInfo> argInfo = parser.GetArgumentInfo();
+                IEnumerator<ArgumentInfo> argInfo = parser.GetArgumentInfo(); //Possible memory allocations
                 while (argInfo.MoveNext() && !skip) {
                     ArgumentInfo current = argInfo.Current;
                     int length = (int)current.ElementCount;
@@ -137,46 +146,15 @@ namespace RefinedShell.Execution
             return compiledArguments;
         }
 
-        /*private IArgument[] ParseArguments(ICommand command, Node[] argumentNodes)
-        {
-            IArgument[] compiledArguments = new IArgument[command.Arguments.Count];
-            int start = 0;
-
-            for (int i = 0; i < command.Arguments.Count; i++)
-            {
-                Argument argument = command.Arguments[i];
-                ITypeParser parser = _parsers.GetParser(argument.Type);
-                if (argument.IsOptional)
-                {
-                    if(i >= argumentNodes.Length)
-                    {
-                        compiledArguments[i] = new ParsedArgument(Type.Missing);
-                        continue;
-                    }
-                }
-
-                int length = (int)parser.ArgumentCount;
-                ReadOnlySpan<Node> argumentSlice = argumentNodes.AsSpan(start, length);
-                compiledArguments[i] = ParseArgument(parser, argumentSlice);
-                start += length;
-                i += length - 1;
-            }
-
-            return compiledArguments;
-        }*/
-
         private IArgument ParseArgument(ITypeParser parser, ReadOnlySpan<Node> argumentNodes)
         {
-            if (argumentNodes.Length == 1 && argumentNodes[0] is ArgumentNode simpleNode)
-            {
+            if (argumentNodes.Length == 1 && argumentNodes[0] is ArgumentNode simpleNode) {
                 string[] arg = { simpleNode.Argument };
                 return new ParsedArgument(parser.Parse(arg));
             }
-            if (ContainsCommandNode(argumentNodes))
-            {
+            if (ContainsCommandNode(argumentNodes)) {
                 IArgument[] arguments = new IArgument[argumentNodes.Length];
-                for (int i = 0; i < argumentNodes.Length; i++)
-                {
+                for (int i = 0; i < argumentNodes.Length; i++) {
                     Node node = argumentNodes[i];
                     arguments[i] = CompileArgument(node);
                 }
@@ -190,8 +168,7 @@ namespace RefinedShell.Execution
 
         private IArgument CompileArgument(Node node)
         {
-            return node switch
-            {
+            return node switch {
                 CommandNode commandNode => new ExecutableInlineCommand(CompileCommand(commandNode)),
                 ArgumentNode argumentNode => new UnparsedArgument(argumentNode.Argument),
                 _ => throw new InvalidOperationException("Unknown node type")
@@ -200,8 +177,7 @@ namespace RefinedShell.Execution
 
         private static bool ContainsCommandNode(ReadOnlySpan<Node> nodes)
         {
-            foreach (Node node in nodes)
-            {
+            foreach (Node node in nodes) {
                 if (node is CommandNode)
                     return true;
             }

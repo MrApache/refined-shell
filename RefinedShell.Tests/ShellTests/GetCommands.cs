@@ -54,10 +54,10 @@ internal sealed class GetCommands
         Assert.That(command, Is.Not.Null);
     }
 
-    [ShellCommand]
+    [ShellFunction]
     private static void Command1() { }
-    [ShellCommand]
+    [ShellFunction]
     private static void Command2() { }
-    [ShellCommand]
+    [ShellFunction]
     private static void Command3() { }
 }

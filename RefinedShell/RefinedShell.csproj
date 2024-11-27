@@ -3,11 +3,16 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ImplicitUsings>false</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <TargetFramework>netstandard2.1</TargetFramework>
+<!--
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+-->
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <DefineConstants>TRACE;</DefineConstants>
+      <DocumentationFile />
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DocumentationFile />
     </PropertyGroup>
 </Project>

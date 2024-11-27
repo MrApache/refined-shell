@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using RefinedShell.Commands;
 using RefinedShell.Execution;
@@ -10,6 +11,7 @@ namespace RefinedShell.Interpreter
     {
         private readonly CommandCollection _collection;
         private readonly ParserLibrary _parsers;
+        private uint _commandsCount;
 
         public Semantic(CommandCollection collection, ParserLibrary parsers)
         {
@@ -17,12 +19,50 @@ namespace RefinedShell.Interpreter
             _parsers = parsers;
         }
 
-        public ProblemSegment Analyze(Expression expression)
+        public InternalResult<Node> Analyze(Node tree)
         {
-            foreach (CommandNode commandNode in expression) {
-                ProblemSegment error = ValidateCommand(commandNode);
-                if (error.Error != ExecutionError.None)
-                    return error;
+            ProblemSegment error = ValidateNode(tree);
+            if (error.Error != ExecutionError.None)
+                return new InternalResult<Node>(tree, error, 0);
+            return new InternalResult<Node>(tree, ProblemSegment.None, _commandsCount);
+        }
+
+        private ProblemSegment ValidateNode(Node node)
+        {
+            return node switch
+            {
+                CommandNode cn => ValidateCommand(cn),
+                LogicalNode ln => ValidateLogicalExpression(ln),
+                SequenceNode sq => ValidateSequence(sq),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        private ProblemSegment ValidateLogicalExpression(LogicalNode logicalNode)
+        {
+            ProblemSegment first = ValidateCommand(logicalNode.First);
+            if (first != ProblemSegment.None) {
+                return first;
+            }
+
+            ProblemSegment second = ValidateNode(logicalNode.Second);
+            if (second != ProblemSegment.None) {
+                return second;
+            }
+
+            return ProblemSegment.None;
+        }
+
+        private ProblemSegment ValidateSequence(SequenceNode sequenceNode)
+        {
+            ProblemSegment first = ValidateCommand(sequenceNode.First);
+            if (first != ProblemSegment.None) {
+                return first;
+            }
+
+            ProblemSegment second = ValidateNode(sequenceNode.Second);
+            if (second != ProblemSegment.None) {
+                return second;
             }
 
             return ProblemSegment.None;
@@ -43,7 +83,7 @@ namespace RefinedShell.Interpreter
             for (int i = 0; i < argsDecl.Count; i++) {
                 Argument arg = argsDecl[i];
                 ITypeParser parser = _parsers.GetParser(arg.Type);
-                IEnumerator<ArgumentInfo> argInfo = parser.GetArgumentInfo();
+                IEnumerator<ArgumentInfo> argInfo = parser.GetArgumentInfo(); //Possible memory allocations
                 while (argInfo.MoveNext()) {
                     ArgumentInfo current = argInfo.Current;
                     int length = (int)current.ElementCount;
@@ -101,54 +141,61 @@ namespace RefinedShell.Interpreter
                     ExecutionError.CommandHasNoReturnResult);
             }
 
+            _commandsCount++;
             return ValidateArguments(command.Arguments, commandNode.Arguments);
         }
 
         private ProblemSegment ValidateArgument(ITypeParser parser, ReadOnlySpan<Node> arguments)
         {
-            if (arguments.Length == 1 && arguments[0] is ArgumentNode an) {
-                string[] arg = { an.Argument };
-                if(!parser.CanParse(arg)) {
-                    return new ProblemSegment(an.Token.Start, an.Token.Length,
-                        ExecutionError.InvalidArgumentType);
-                }
-            }
-            if (ContainsCommandNode(arguments)) {
-                for (int i = 0; i < arguments.Length; i++) {
-                    switch (arguments[i])
-                    {
-                        case ArgumentNode _:
-                        {
-                            ProblemSegment error = ValidateArgument(parser, arguments.Slice(i, 1));
-                            if (error != ProblemSegment.None)
-                                return error;
-                            break;
-                        }
-                        case CommandNode c:
-                        {
-                            ProblemSegment error = ValidateCommand(c);
-                            if (error != ProblemSegment.None)
-                                return error;
-                            break;
-                        }
+            string[] tempPool = ArrayPool<string>.Shared.Rent(arguments.Length);
+            try {
+                if (arguments.Length == 1 && arguments[0] is ArgumentNode an) {
+                    tempPool[0] = an.Argument;
+                    if(!parser.CanParse(tempPool)) {
+                        return new ProblemSegment(an.Token.Start, an.Token.Length,
+                            ExecutionError.InvalidArgumentType);
                     }
                 }
 
-                return ProblemSegment.None;
-            }
+                if (ContainsCommandNode(arguments)) {
+                    for (int i = 0; i < arguments.Length; i++) {
+                        switch (arguments[i])
+                        {
+                            case ArgumentNode _:
+                            {
+                                ProblemSegment error = ValidateArgument(parser, arguments.Slice(i, 1));
+                                if (error != ProblemSegment.None)
+                                    return error;
+                                break;
+                            }
+                            case CommandNode c:
+                            {
+                                ProblemSegment error = ValidateCommand(c);
+                                if (error != ProblemSegment.None)
+                                    return error;
+                                break;
+                            }
+                        }
+                    }
 
-            string[] rawArgs = new string[arguments.Length];
-            int start = ((ArgumentNode)arguments[0]).Token.Start;
-            int length = 0;
-            for (int i = 0; i < arguments.Length; i++) {
-                ArgumentNode node = (ArgumentNode)arguments[i];
-                length += node.Token.Length;
-                rawArgs[i] = node.Argument;
-            }
+                    return ProblemSegment.None;
+                }
 
-            if (!parser.CanParse(rawArgs)) {
-                return new ProblemSegment(start, length,
-                    ExecutionError.InvalidArgumentType);
+                int start = ((ArgumentNode)arguments[0]).Token.Start;
+                int length = 0;
+                for (int i = 0; i < arguments.Length; i++) {
+                    ArgumentNode node = (ArgumentNode)arguments[i];
+                    length += node.Token.Length;
+                    tempPool[i] = node.Argument;
+                }
+
+                if (!parser.CanParse(tempPool)) {
+                    return new ProblemSegment(start, length,
+                        ExecutionError.InvalidArgumentType);
+                }
+            }
+            finally {
+                ArrayPool<string>.Shared.Return(tempPool);
             }
 
             return ProblemSegment.None;

@@ -16,7 +16,7 @@ public class Executors
         _unsafe.RegisterAllWithAttribute<CommandExecution>(null);
     }
 
-    [ShellCommand("set")]
+    [ShellFunction("set")]
     private static void SetValue(string name, int value) { }
 
     [Benchmark]

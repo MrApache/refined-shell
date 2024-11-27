@@ -5,23 +5,8 @@ namespace RefinedShell.Commands
     /// <summary>
     /// Represents a command that can be executed in a shell
     /// </summary>
-    public interface ICommand : IDisposable
+    public interface ICommand : IReadOnlyCommand, IDisposable
     {
-        /// <summary>
-        /// Name of the command
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// Array of parameter information necessary for executing the command.
-        /// </summary>
-        public Arguments Arguments { get; }
-
-        /// <summary>
-        /// Indicates whether the command produces a return value upon execution.
-        /// </summary>
-        public bool ReturnsResult { get; }
-
         /// <summary>
         /// Executes the command using the specified arguments.
         /// </summary>

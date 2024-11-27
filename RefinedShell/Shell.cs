@@ -6,6 +6,7 @@ using RefinedShell.Commands;
 using RefinedShell.Execution;
 using RefinedShell.Parsing;
 using RefinedShell.Utilities;
+using RefinedShell.test;
 
 namespace RefinedShell
 {
@@ -32,6 +33,8 @@ namespace RefinedShell
             _compiler = new Compiler(_commands, _parsers);
             _executor = catchExceptions ? (IExecutor)new SafeExecutor() : new UnsafeExecutor();
             _aliases = new Dictionary<StringToken, StringToken>(32);
+            _plugins = new List<IPlugin>();
+            _pluginContext = new PluginContext(this);
         }
 
         /// <summary>
@@ -49,22 +52,24 @@ namespace RefinedShell
                 input = alias;
             }
 
-            ValueTuple<ExecutableExpression?, ProblemSegment> result = _compiler.Compile(input);
-            if (result.Item1 == null)
-                return ExecutionResult.Error(result.Item2);
+            InternalResult<Expression> result = _compiler.Compile(input);
+            if (result.Expression == null)
+                return ExecutionResult.Error(result.Segment);
 
-            return _executor.Execute(result.Item1);
+            ReadOnlySpan<IReadOnlyCommand> commands = new ReadOnlySpan<IReadOnlyCommand>(result.Expression.Commands);
+            InvokeBeforeExecutionEvent(commands, input);
+            ExecutionResult executionResult = _executor.Execute(result.Expression.Tree);
+            InvokeAfterExecutionEvent(commands, input, executionResult);
+            return executionResult;
         }
 
         public ProblemSegment Analyze(StringToken input)
         {
-            return _compiler.Analyze(input).problem;
+            return _compiler.Analyze(input).Segment;
         }
 
-        //Maybe add logs
-        //Rewrite docs
         /// <summary>
-        /// Registers all methods with <see cref="ShellCommandAttribute"/> in the specified source.
+        /// Registers all methods with <see cref="ShellFunctionAttribute"/> in the specified source.
         /// </summary>
         public void RegisterAllWithAttribute<T>(T? target, bool includeAll = true) where T : class
         {
@@ -75,7 +80,7 @@ namespace RefinedShell
         }
 
         /// <summary>
-        /// Unregisters all methods with <see cref="ShellCommandAttribute"/> in the specified source.
+        /// Unregisters all methods with <see cref="ShellFunctionAttribute"/> in the specified source.
         /// </summary>
         public void UnregisterAllWithAttribute<T>(T? target, bool includeAll = true) where T : class
         {
@@ -107,6 +112,7 @@ namespace RefinedShell
                 return false;
             bool result = _commands.Remove(name, out ICommand command);
             command.Dispose();
+            InvokeOnCommandUnregisteredEvent(command);
             return result;
         }
 
@@ -129,6 +135,7 @@ namespace RefinedShell
         {
             foreach (ICommand command in _commands) {
                 command.Dispose();
+                InvokeOnCommandUnregisteredEvent(command);
             }
             _compiler.ClearCache();
             _commands.Clear();
@@ -166,6 +173,7 @@ namespace RefinedShell
             {
                 _commands.Remove(command);
                 command.Dispose();
+                InvokeOnCommandUnregisteredEvent(command);
             }
         }
     }

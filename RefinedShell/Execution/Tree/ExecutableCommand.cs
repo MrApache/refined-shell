@@ -26,11 +26,11 @@ namespace RefinedShell.Execution
             if (!Command.IsValid())
                 return new ExecutionResult(false, _start, _length, ExecutionError.CommandNotValid, null);
 
-            for (int i = 0; i < _arguments.Length; i++)
-            {
+            for (int i = 0; i < _arguments.Length; i++) {
                 IArgument argument = _arguments[i];
-                if (!argument.CanGetValue())
+                if (!argument.CanGetValue()) {
                     return new ExecutionResult(false, 0, 0, ExecutionError.ArgumentError, null);
+                }
                 _pool[i] = argument.GetValue();
             }
 

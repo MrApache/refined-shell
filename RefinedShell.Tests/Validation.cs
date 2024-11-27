@@ -22,7 +22,7 @@ internal sealed class Validation
     [Test]
     public void ExecuteTestCases_Unregister_ReturnsFalse()
     {
-        foreach (IExample example in ExampleCollection.Examples)
+        foreach (ITestCase example in TestCaseCollection.Examples)
         {
             example.RegisterCommands(_shell);
             IReadOnlyCollection<ICommand> commands = _shell.GetAllCommands();
@@ -38,7 +38,7 @@ internal sealed class Validation
     [Test]
     public void ExecuteTestCases_GC_ReturnsFalse()
     {
-        foreach (Type exampleType in ExampleCollection.CorrectInstanceTypes)
+        foreach (Type exampleType in TestCaseCollection.CorrectInstanceTypes)
         {
             Register(exampleType);
             GC.Collect();
@@ -57,7 +57,7 @@ internal sealed class Validation
 
     private void Register(Type type)
     {
-        IExample example = (IExample)Activator.CreateInstance(type)!;
-        example.RegisterCommands(_shell);
+        ITestCase testCase = (ITestCase)Activator.CreateInstance(type)!;
+        testCase.RegisterCommands(_shell);
     }
 }

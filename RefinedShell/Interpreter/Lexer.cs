@@ -1,30 +1,49 @@
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System;
+using RefinedShell.Matching;
 
 namespace RefinedShell.Interpreter
 {
     internal sealed class Lexer
     {
-        private readonly List<TokenDefinition> _tokenDefinitions;
+        private static readonly (TokenType Type, Matcher Regex)[] _regex;
+
+        static Lexer()
+        {
+            _regex = new[]
+            {
+                /*
+                (TokenType.Whitespace, new Regex(@"^\s+", RegexOptions.Compiled)),
+                (TokenType.String, new Regex("^\"{1}[^\"]*\"{1}", RegexOptions.Compiled)),
+                (TokenType.Identifier, new Regex("^[a-zA-Z_][a-zA-Z0-9_]*", RegexOptions.Compiled)),
+                (TokenType.Number, new Regex("^[-|+]?[0-9]+([.][0-9]*)?", RegexOptions.Compiled)),
+                (TokenType.Semicolon, new Regex("^;", RegexOptions.Compiled)),
+                (TokenType.Dollar, new Regex(@"^\$", RegexOptions.Compiled)),
+                (TokenType.OpenParenthesis, new Regex(@"^\(", RegexOptions.Compiled)),
+                (TokenType.CloseParenthesis, new Regex(@"^\)", RegexOptions.Compiled)),
+                (TokenType.Ampersand, new Regex("^&", RegexOptions.Compiled)),
+                (TokenType.VerticalBar, new Regex(@"^\|", RegexOptions.Compiled))
+                */
+
+                (TokenType.Whitespace, new Matcher(@"^\s+")),
+                (TokenType.Dollar, new Matcher(@"^\$")),
+                (TokenType.OpenParenthesis, new Matcher(@"^\(")),
+                (TokenType.CloseParenthesis, new Matcher(@"^\)")),
+                (TokenType.Semicolon, new Matcher("^;")),
+                (TokenType.String, new Matcher("^\"[^\"]*\"")),
+                (TokenType.Identifier, new Matcher("^[a-zA-Z_][a-zA-Z0-9_]*")),
+                (TokenType.Number, new Matcher("^[-|+]?[0-9]+([.][0-9]*)?")),
+                //(TokenType.Ampersand, new Matcher("^&")),
+                //(TokenType.VerticalBar, new Matcher(@"^\|"))
+            };
+        }
 
         private string _input;
         private int _position;
-        private int _previousPosition;
         private Token _currentToken;
+        private Token _previousToken;
 
         public Lexer()
         {
-            _tokenDefinitions = new List<TokenDefinition>
-            {
-                new TokenDefinition(TokenType.Whitespace, @"^\s+"),
-                new TokenDefinition(TokenType.String, "^\"{1}[^\"]*\"{1}"),
-                new TokenDefinition(TokenType.Identifier, "^[a-zA-Z_][a-zA-Z0-9_]*"),
-                new TokenDefinition(TokenType.Number, "^[-|+]?[0-9]+([.][0-9]*)?"),
-                new TokenDefinition(TokenType.Semicolon, "^;"),
-                new TokenDefinition(TokenType.Dollar, @"^\$"),
-                new TokenDefinition(TokenType.OpenParenthesis, @"^\("),
-                new TokenDefinition(TokenType.CloseParenthesis, @"^\)")
-            };
             _input = string.Empty;
             _currentToken = default;
         }
@@ -33,41 +52,41 @@ namespace RefinedShell.Interpreter
         {
             _input = input;
             _position = 0;
-            _previousPosition = 0;
+            _previousToken = default;
+            _currentToken = default;
         }
 
         public Token GetPreviousToken()
         {
-            _position = _previousPosition;
-            return GetNextToken();
+            _position = _currentToken.Start;
+            return _previousToken;
         }
 
         public Token GetNextToken()
         {
-            _previousPosition = _currentToken.Start;
-            Token nextToken = FindNextToken();
-            _currentToken = nextToken;
-            return nextToken;
+            _previousToken = _currentToken;
+            return _currentToken = FindNextToken();
         }
 
         private Token FindNextToken()
         {
             while(_position < _input.Length) {
-                Token token = GoNext();
+                Token token = GetToken();
                 if(token.Type == TokenType.Whitespace)
                     continue;
 
-                if(token.Type == TokenType.Unknown) {
+                if (token.Type == TokenType.Unknown) {
                     int start = _position;
-                    Start:
-                    _position++;
-                    Token nextToken = FindNextToken();
-                    if (nextToken.Type == TokenType.Unknown) {
-                        goto Start; //Oh no
-                    }
 
-                    _position = nextToken.Start;
-                    return new Token(start, nextToken.Start - start, TokenType.Unknown);
+                    while (true) {
+                        _position++;
+                        Token nextToken = FindNextToken();
+
+                        if (nextToken.Type != TokenType.Unknown) {
+                            _position = nextToken.Start;
+                            return new Token(start, nextToken.Start - start, TokenType.Unknown);
+                        }
+                    }
                 }
 
                 return token;
@@ -76,18 +95,17 @@ namespace RefinedShell.Interpreter
             return new Token(_input.Length, 0, TokenType.EndOfLine);
         }
 
-        private Token GoNext()
+        private Token GetToken()
         {
-            string slice = _input.Substring(_position, _input.Length - _position);
-            foreach ((TokenType tokenType, string pattern) in _tokenDefinitions) {
-                Match match = Regex.Match(slice, pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                if(match.Success) {
-                    Token token = new Token(_position, match.Length, tokenType);
+            ReadOnlySpan<char> input = _input.AsSpan(_position);
+            foreach ((TokenType type, Matcher regex) in _regex) {
+                Match match = regex.Match(input);
+                if (match.Success) {
+                    Token token = new Token(_position, match.Length, type);
                     _position += match.Length;
                     return token;
                 }
             }
-
             return new Token(0, 0, TokenType.Unknown);
         }
     }

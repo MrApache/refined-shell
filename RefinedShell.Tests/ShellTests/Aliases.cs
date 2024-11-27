@@ -17,19 +17,19 @@ internal sealed class Aliases
         _shell.CreateAlias("gv","getValue");
     }
 
-    [ShellCommand("print")]
+    [ShellFunction("print")]
     private static void Print(string message)
     {
         Console.WriteLine(message);
     }
 
-    [ShellCommand("print_err")]
+    [ShellFunction("print_err")]
     private static void PrintError(string message)
     {
         Console.WriteLine($"[Error] {message}");
     }
 
-    [ShellCommand("getValue")]
+    [ShellFunction("getValue")]
     private static int GetValue() => 993;
 
     [Test]

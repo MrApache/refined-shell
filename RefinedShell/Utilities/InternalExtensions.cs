@@ -39,7 +39,7 @@ namespace RefinedShell.Utilities
 
         internal static string GetName(this MemberInfo member)
         {
-            return member.GetCustomAttribute<ShellCommandAttribute>()!.Name ?? member.Name;
+            return member.GetCustomAttribute<ShellFunctionAttribute>()!.Name ?? member.Name;
         }
 
         internal static IEnumerable<U> WithAttribute<U, T>(this U[] memberCollection)
@@ -73,6 +73,23 @@ namespace RefinedShell.Utilities
                 if(e2 is IDisposable disposableE2)
                     disposableE2.Dispose();
             }
+        }
+
+        internal static void AddRange<T>(this ICollection<T> source, IEnumerable<T> collection)
+        {
+            foreach(T item in collection) {
+                source.Add(item);
+            }
+        }
+
+        internal static string AsString(this IReadOnlyCollection<char> chars)
+        {
+            Span<char> buffer = stackalloc char[chars.Count];
+            int i = 0;
+            foreach(char c in chars) {
+                buffer[i++] = c;
+            }
+            return buffer.ToString();
         }
     }
 }

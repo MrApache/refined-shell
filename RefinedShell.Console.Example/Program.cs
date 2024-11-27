@@ -10,6 +10,14 @@ add 2147483647 1
     [True]->-2147483648
     */
 
+int[] list =
+[
+    0, 1, 2, 3, 4, 5, 6
+];
+
+
+
+return;
 
 Shell shell = new Shell();
 CommandCollection commandCollection = new CommandCollection(shell);

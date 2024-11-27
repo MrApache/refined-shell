@@ -13,7 +13,7 @@ internal abstract class DefaultShellSetup_Static
         Shell.Register(GetRandom, "random");
     }
 
-    [ShellCommand]
+    [ShellFunction]
     private static void Print(string message)
     {
         Console.WriteLine(message);
@@ -24,6 +24,6 @@ internal abstract class DefaultShellSetup_Static
         return Random.Shared.Next();
     }
 
-    [ShellCommand("setValue")]
+    [ShellFunction("setValue")]
     private static void SetValue(int value) {}
 }
